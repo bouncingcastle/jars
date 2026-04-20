@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AdminChildCard } from "@/components/admin-child-card";
+import { AdminChildSummaryCard } from "@/components/admin-child-summary-card";
 import { FamilyPromptCard } from "@/components/family-prompt-card";
 import { LockScreen } from "@/components/lock-screen";
 import { ManualTopupForm } from "@/components/manual-topup-form";
@@ -69,6 +69,14 @@ export default async function AdminPage() {
 
       <FamilyPromptCard />
 
+      <section className="panel admin-overview-banner">
+        <div>
+          <span className="eyebrow">How to use this</span>
+          <h2>Start with the child, then edit the rules</h2>
+          <p>Use this page for household overview, quick top-ups, and adding new kids. Open a child to manage themes, quest rules, and jar settings without crowding the whole dashboard.</p>
+        </div>
+      </section>
+
       <section className="panel">
         <div className="section-heading">
           <div>
@@ -83,10 +91,10 @@ export default async function AdminPage() {
 
       <section className="admin-grid">
         {household.children.map((child) => (
-          <AdminChildCard
+          <AdminChildSummaryCard
             child={child}
             currency={household.currency}
-            quests={questMap.get(child.profile.id) ?? []}
+            activeQuestCount={(questMap.get(child.profile.id) ?? []).length}
             key={child.profile.id}
           />
         ))}

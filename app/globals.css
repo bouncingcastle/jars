@@ -1,3 +1,104 @@
+  .quest-tracker__item small,
+  .quest-tracker__item p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.84rem;
+  }
+
+.admin-overview-banner p {
+  margin: 0.35rem 0 0;
+  max-width: 58ch;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.admin-child-summary-card {
+  display: grid;
+  gap: 0.95rem;
+}
+
+.admin-child-summary-card__header,
+.admin-child-summary-card__actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.admin-chip {
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+  background: rgba(0, 121, 107, 0.1);
+  color: var(--teal);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.admin-child-summary-card__stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.admin-child-summary-card__stats div,
+.admin-rules-summary__list p {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.7rem 0.8rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid var(--line);
+}
+
+.admin-child-summary-card__stats small,
+.admin-rules-summary__list p {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.admin-child-summary-card__stats strong,
+.admin-child-summary-card__meta strong,
+.admin-rules-summary__list strong {
+  color: var(--ink);
+  font-size: 0.98rem;
+}
+
+.admin-child-summary-card__meta {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.admin-child-summary-card__meta p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.admin-detail-shell {
+  gap: 1.1rem;
+}
+
+.admin-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.9fr);
+  gap: 1rem;
+}
+
+.admin-detail-grid__main,
+.admin-detail-grid__side {
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+}
+
+.admin-rules-summary__list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.admin-rules-summary__list p {
+  margin: 0;
+}
 :root {
   --bg: #f8f3e8;
   --surface: rgba(255, 252, 245, 0.9);
@@ -964,6 +1065,17 @@ button {
     flex-direction: column;
     align-items: flex-start;
   }
+
+  .admin-child-summary-card__header,
+  .admin-child-summary-card__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-child-summary-card__stats,
+  .admin-detail-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* --- iPad / Tablet (768–1024px) --- */
@@ -1579,6 +1691,101 @@ button {
   margin: 0;
   color: var(--muted);
   font-size: 0.84rem;
+}
+
+.admin-overview-banner p {
+  margin: 0.35rem 0 0;
+  max-width: 58ch;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.admin-child-summary-card {
+  display: grid;
+  gap: 0.95rem;
+}
+
+.admin-child-summary-card__header,
+.admin-child-summary-card__actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.admin-chip {
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+  background: rgba(0, 121, 107, 0.1);
+  color: var(--teal);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.admin-child-summary-card__stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.admin-child-summary-card__stats div,
+.admin-rules-summary__list p {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.7rem 0.8rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid var(--line);
+}
+
+.admin-child-summary-card__stats small,
+.admin-rules-summary__list p {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.admin-child-summary-card__stats strong,
+.admin-child-summary-card__meta strong,
+.admin-rules-summary__list strong {
+  color: var(--ink);
+  font-size: 0.98rem;
+}
+
+.admin-child-summary-card__meta {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.admin-child-summary-card__meta p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.admin-detail-shell {
+  gap: 1.1rem;
+}
+
+.admin-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.9fr);
+  gap: 1rem;
+}
+
+.admin-detail-grid__main,
+.admin-detail-grid__side {
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+}
+
+.admin-rules-summary__list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.admin-rules-summary__list p {
+  margin: 0;
 }
 
 /* ================================================================
