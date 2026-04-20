@@ -2,7 +2,8 @@ import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { defaultStore } from "@/lib/default-store";
 import { hashPin, verifyPin } from "@/lib/pin";
-import { ChildMode, ChildProfile, ChildSnapshot, HouseholdStore, JarKey, LedgerEntry, ScheduleType } from "@/lib/types";
+import { ChildMode, ChildProfile, ChildSnapshot, HouseholdStore, JarKey, LedgerEntry, ScheduleType, ThemeId } from "@/lib/types";
+import { isValidTheme } from "@/lib/themes";
 
 const storePath = path.join(process.cwd(), "data", "store.json");
 const enabledJars: JarKey[] = ["spend", "save", "give", "grow"];
@@ -20,7 +21,14 @@ export async function readStore() {
   await ensureStore();
   const raw = await readFile(storePath, "utf8");
   try {
-    return JSON.parse(raw) as HouseholdStore;
+    const parsed = JSON.parse(raw) as HouseholdStore;
+    // Back-fill theme for profiles created before theming was added
+    for (const child of parsed.children) {
+      if (!isValidTheme(child.theme ?? "")) {
+        (child as ChildProfile).theme = "default";
+      }
+    }
+    return parsed;
   } catch {
     // Recover from corrupted JSON writes by preserving the broken file and resetting.
     const corruptPath = `${storePath}.corrupt-${Date.now()}.json`;
@@ -241,6 +249,7 @@ export async function upsertChildProfile(input: {
   mode: ChildMode;
   goalName: string;
   goalAmountCents: number;
+  theme?: ThemeId;
 }) {
   const store = await readStore();
   const normalizedId = input.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -263,6 +272,7 @@ export async function upsertChildProfile(input: {
     existing.goalName = input.goalName;
     existing.goalAmountCents = input.goalAmountCents;
     existing.jarTargets = jarTargets;
+    if (input.theme) existing.theme = input.theme;
   } else {
     if (!input.pin) {
       throw new Error("PIN is required for new children");
@@ -279,6 +289,7 @@ export async function upsertChildProfile(input: {
       goalName: input.goalName,
       goalAmountCents: input.goalAmountCents,
       jarTargets,
+      theme: input.theme ?? "default",
       createdAt: new Date().toISOString()
     });
   }

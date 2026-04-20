@@ -1413,3 +1413,72 @@ button {
   color: var(--muted);
   font-size: 0.92rem;
 }
+
+/* ================================================================
+   THEMES — pre-packaged colour palettes selectable per child
+   Applied via data-theme="<id>" on the child page root element.
+   body:has() changes the full-viewport background gradient.
+   ================================================================ */
+
+/* --- Peppa Pink --- */
+[data-theme="peppa"] {
+  --bg: #fce4f0;
+  --surface: rgba(255, 237, 248, 0.92);
+  --surface-strong: #fff5fb;
+  --teal: #c2185b;
+  --sun: #f48fb1;
+  --sun-deep: #ad1457;
+  --mint: #ce93d8;
+  --coral: #f8bbd0;
+  --line: rgba(194, 24, 91, 0.1);
+  --shadow: 0 18px 40px rgba(194, 24, 91, 0.1);
+}
+
+body:has([data-theme="peppa"]) {
+  background:
+    radial-gradient(circle at top left, rgba(244, 143, 177, 0.38), transparent 28%),
+    radial-gradient(circle at top right, rgba(206, 147, 216, 0.28), transparent 24%),
+    linear-gradient(180deg, #fff0f8 0%, #fce4f0 100%);
+}
+
+/* --- Ocean --- */
+[data-theme="ocean"] {
+  --bg: #e0f4ff;
+  --surface: rgba(224, 244, 255, 0.92);
+  --surface-strong: #f0f9ff;
+  --teal: #0277bd;
+  --sun: #4fc3f7;
+  --sun-deep: #0288d1;
+  --mint: #80deea;
+  --coral: #b3e5fc;
+  --line: rgba(2, 119, 189, 0.1);
+  --shadow: 0 18px 40px rgba(2, 119, 189, 0.1);
+}
+
+body:has([data-theme="ocean"]) {
+  background:
+    radial-gradient(circle at top left, rgba(79, 195, 247, 0.32), transparent 28%),
+    radial-gradient(circle at top right, rgba(128, 222, 234, 0.22), transparent 24%),
+    linear-gradient(180deg, #f0faff 0%, #e0f4ff 100%);
+}
+
+/* --- Sunshine --- */
+[data-theme="sunshine"] {
+  --bg: #fffde7;
+  --surface: rgba(255, 253, 231, 0.92);
+  --surface-strong: #fffff8;
+  --teal: #e65100;
+  --sun: #ffee58;
+  --sun-deep: #f57f17;
+  --mint: #aed581;
+  --coral: #ffcc80;
+  --line: rgba(230, 81, 0, 0.1);
+  --shadow: 0 18px 40px rgba(230, 81, 0, 0.08);
+}
+
+body:has([data-theme="sunshine"]) {
+  background:
+    radial-gradient(circle at top left, rgba(255, 238, 88, 0.38), transparent 28%),
+    radial-gradient(circle at top right, rgba(174, 213, 129, 0.24), transparent 24%),
+    linear-gradient(180deg, #fffef5 0%, #fffde7 100%);
+}

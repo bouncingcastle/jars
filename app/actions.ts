@@ -12,6 +12,7 @@ import {
 } from "@/lib/store";
 import { parseCurrencyInput } from "@/lib/money";
 import { ChildMode, ScheduleType } from "@/lib/types";
+import { isValidTheme } from "@/lib/themes";
 import {
   clearChildSession,
   clearParentSession,
@@ -56,6 +57,8 @@ export async function saveChildProfileAction(_prev: ActionResult | null, formDat
   const goalName = String(formData.get("goalName") || "Big goal").trim();
   const goalAmountCents = parseCurrencyInput(String(formData.get("goalAmount") || "0"));
   const id = String(formData.get("id") || "").trim();
+  const rawTheme = String(formData.get("theme") || "default");
+  const theme = isValidTheme(rawTheme) ? rawTheme : "default";
 
   if (!name) return { error: "Name is required." };
   if (pin && !/^\d{4,6}$/.test(pin)) return { error: "PIN must be 4 to 6 digits." };
@@ -75,7 +78,8 @@ export async function saveChildProfileAction(_prev: ActionResult | null, formDat
       investingEnabled,
       mode,
       goalName,
-      goalAmountCents
+      goalAmountCents,
+      theme
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to save profile. Please try again.";
