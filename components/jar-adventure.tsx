@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type TouchEvent } from "react";
 import { formatCurrency } from "@/lib/money";
 import { JarVisual } from "@/components/jar-visual";
 import { Badge } from "@/lib/badges";
@@ -14,6 +14,12 @@ interface JarAdventureProps {
   balances: Partial<Record<JarKey, number>>;
   investingEnabled: boolean;
   badges: Badge[];
+  streak: number;
+}
+
+interface BadgeProgress {
+  percent: number;
+  detail: string;
 }
 
 const jarMeta: Record<JarKey, { label: string; color: string }> = {
@@ -36,13 +42,109 @@ const badgeUnlockTips: Record<string, string> = {
   grower: "Put any coins into Grow.",
 };
 
-export function JarAdventure({ currency, mode, totalAllocatedCents, targets, balances, investingEnabled, badges }: JarAdventureProps) {
+function getBadgeProgress(
+  badgeId: string,
+  currency: string,
+  stats: { spend: number; save: number; give: number; grow: number; total: number; lifetime: number; streak: number }
+): BadgeProgress {
+  const { spend, save, give, grow, total, lifetime, streak } = stats;
+
+  switch (badgeId) {
+    case "first-sort": {
+      const target = 100;
+      return {
+        percent: total > 0 ? 100 : 0,
+        detail: `${formatCurrency(Math.min(total, target), currency)} / ${formatCurrency(target, currency)}`,
+      };
+    }
+    case "kind-heart": {
+      const target = 100;
+      return {
+        percent: give > 0 ? 100 : 0,
+        detail: `${formatCurrency(Math.min(give, target), currency)} / ${formatCurrency(target, currency)} in Give`,
+      };
+    }
+    case "saver": {
+      if (spend <= 0) {
+        return {
+          percent: save > 0 ? 100 : 0,
+          detail: `${formatCurrency(save, currency)} saved`,
+        };
+      }
+      return {
+        percent: Math.max(0, Math.min((save / spend) * 100, 100)),
+        detail: `${formatCurrency(save, currency)} save vs ${formatCurrency(spend, currency)} spend`,
+      };
+    }
+    case "balanced": {
+      const filled = [spend, save, give].filter((v) => v > 0).length;
+      return { percent: (filled / 3) * 100, detail: `${filled} / 3 jars started` };
+    }
+    case "streak-3": {
+      return { percent: Math.min((streak / 3) * 100, 100), detail: `${Math.min(streak, 3)} / 3 weeks` };
+    }
+    case "streak-8": {
+      return { percent: Math.min((streak / 8) * 100, 100), detail: `${Math.min(streak, 8)} / 8 weeks` };
+    }
+    case "generous": {
+      const target = Math.max(Math.round(total * 0.15), 100);
+      return {
+        percent: target > 0 ? Math.min((give / target) * 100, 100) : 0,
+        detail: `${formatCurrency(give, currency)} / ${formatCurrency(target, currency)} in Give`,
+      };
+    }
+    case "future-first": {
+      const future = save + grow;
+      const target = Math.max(spend, 100);
+      return {
+        percent: Math.min((future / target) * 100, 100),
+        detail: `${formatCurrency(future, currency)} future jars vs ${formatCurrency(spend, currency)} spend`,
+      };
+    }
+    case "century": {
+      const target = 10000;
+      return {
+        percent: Math.min((lifetime / target) * 100, 100),
+        detail: `${formatCurrency(lifetime, currency)} / ${formatCurrency(target, currency)} sorted`,
+      };
+    }
+    case "grower": {
+      const target = 100;
+      return {
+        percent: grow > 0 ? 100 : 0,
+        detail: `${formatCurrency(Math.min(grow, target), currency)} / ${formatCurrency(target, currency)} in Grow`,
+      };
+    }
+    default:
+      return { percent: 0, detail: "Keep sorting to unlock" };
+  }
+}
+
+export function JarAdventure({ currency, mode, totalAllocatedCents, targets, balances, investingEnabled, badges, streak }: JarAdventureProps) {
   const [activeBadgeId, setActiveBadgeId] = useState<string | null>(null);
+  const [sheetDragY, setSheetDragY] = useState(0);
+  const [sheetTouchStartY, setSheetTouchStartY] = useState<number | null>(null);
   const visibleJars = (Object.keys(jarMeta) as JarKey[]).filter((jar) => investingEnabled || jar !== "grow");
   const earnedBadges = badges.filter((b) => b.earned);
   const unearnedBadges = badges.filter((b) => !b.earned);
   const allBadges = useMemo(() => [...earnedBadges, ...unearnedBadges], [earnedBadges, unearnedBadges]);
   const activeBadge = activeBadgeId ? allBadges.find((badge) => badge.id === activeBadgeId) ?? null : null;
+  const spend = balances.spend ?? 0;
+  const save = balances.save ?? 0;
+  const give = balances.give ?? 0;
+  const grow = balances.grow ?? 0;
+  const total = spend + save + give + grow;
+  const activeBadgeProgress = activeBadge
+    ? getBadgeProgress(activeBadge.id, currency, {
+      spend,
+      save,
+      give,
+      grow,
+      total,
+      lifetime: totalAllocatedCents,
+      streak,
+    })
+    : null;
 
   function openBadgeSheet(badgeId: string) {
     setActiveBadgeId(badgeId);
@@ -50,6 +152,27 @@ export function JarAdventure({ currency, mode, totalAllocatedCents, targets, bal
 
   function closeBadgeSheet() {
     setActiveBadgeId(null);
+    setSheetDragY(0);
+    setSheetTouchStartY(null);
+  }
+
+  function onSheetTouchStart(event: TouchEvent<HTMLElement>) {
+    setSheetTouchStartY(event.touches[0]?.clientY ?? null);
+  }
+
+  function onSheetTouchMove(event: TouchEvent<HTMLElement>) {
+    if (sheetTouchStartY === null) return;
+    const currentY = event.touches[0]?.clientY ?? sheetTouchStartY;
+    setSheetDragY(Math.max(currentY - sheetTouchStartY, 0));
+  }
+
+  function onSheetTouchEnd() {
+    if (sheetDragY > 90) {
+      closeBadgeSheet();
+      return;
+    }
+    setSheetDragY(0);
+    setSheetTouchStartY(null);
   }
 
   return (
@@ -134,7 +257,14 @@ export function JarAdventure({ currency, mode, totalAllocatedCents, targets, bal
       {activeBadge ? (
         <div className="badge-sheet" role="dialog" aria-modal="true" aria-label="Badge details">
           <button className="badge-sheet__scrim" type="button" onClick={closeBadgeSheet} aria-label="Close badge details" />
-          <article className="badge-sheet__panel">
+          <article
+            className="badge-sheet__panel"
+            onTouchStart={onSheetTouchStart}
+            onTouchMove={onSheetTouchMove}
+            onTouchEnd={onSheetTouchEnd}
+            style={{ transform: `translateY(${sheetDragY}px)` }}
+          >
+            <div className="badge-sheet__handle" aria-hidden="true" />
             <header>
               <strong>
                 {activeBadge.emoji} {activeBadge.label}
@@ -147,6 +277,14 @@ export function JarAdventure({ currency, mode, totalAllocatedCents, targets, bal
             <p className="badge-sheet__tip">
               {badgeUnlockTips[activeBadge.id] ?? "Keep sorting each week to unlock more badges."}
             </p>
+            {activeBadgeProgress ? (
+              <div className="badge-progress">
+                <div className="badge-progress__track">
+                  <span style={{ width: `${activeBadgeProgress.percent <= 0 ? 0 : Math.max(6, Math.round(activeBadgeProgress.percent))}%` }} />
+                </div>
+                <small>{activeBadgeProgress.detail}</small>
+              </div>
+            ) : null}
           </article>
         </div>
       ) : null}

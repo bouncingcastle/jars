@@ -177,6 +177,7 @@ export default async function ChildDetailPage({ params }: { params: Promise<{ id
           balances={snapshot.jarBalances}
           investingEnabled={snapshot.profile.investingEnabled}
           badges={badges}
+          streak={streak}
         />
         <SortingStreak streak={streak} mode={snapshot.profile.mode} />
         <HistoryChart
