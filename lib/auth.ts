@@ -15,6 +15,13 @@ function getAuthSecret() {
   return process.env.AUTH_SECRET || "dev-insecure-auth-secret-change-me";
 }
 
+function shouldUseSecureCookies() {
+  const configured = process.env.AUTH_COOKIE_SECURE;
+  if (configured === "true") return true;
+  if (configured === "false") return false;
+  return process.env.NODE_ENV === "production";
+}
+
 function base64url(input: string) {
   return Buffer.from(input).toString("base64url");
 }
@@ -80,7 +87,7 @@ export async function createParentSession() {
   cookieStore.set(parentCookieName, token, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: shouldUseSecureCookies(),
     path: "/",
     maxAge: 60 * 60 * 24 * 14
   });
@@ -112,7 +119,7 @@ export async function createChildSession(childId: string) {
   cookieStore.set(`${childCookiePrefix}${childId}`, token, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: shouldUseSecureCookies(),
     path: "/",
     maxAge: 60 * 60 * 8
   });

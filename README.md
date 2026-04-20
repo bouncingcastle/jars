@@ -39,6 +39,7 @@ A mobile-first homelab web app for teaching children the Barefoot Investor jars 
 ## Local development
 
 1. Copy `.env.example` to `.env.local` and set strong values for `AUTH_SECRET`, `PARENT_PASSWORD`, and `CRON_SECRET`.
+1. If serving over plain `http://` on a private LAN, set `AUTH_COOKIE_SECURE=false` so login cookies work without TLS.
 1. Install Node.js 22.
 2. Run `npm install`.
 3. Run `npm run dev`.
@@ -81,7 +82,7 @@ cd /opt/kids-jars
 
 # Configure environment
 cp .env.example .env.local
-nano .env.local   # set AUTH_SECRET, PARENT_PASSWORD, and CRON_SECRET
+nano .env.local   # set AUTH_SECRET, PARENT_PASSWORD, CRON_SECRET, and AUTH_COOKIE_SECURE
 
 # Build
 npm install
@@ -156,6 +157,7 @@ systemctl restart kids-jars
 - Set a long random `AUTH_SECRET` in production.
 - Set a strong `PARENT_PASSWORD` and rotate it periodically.
 - Set a random `CRON_SECRET` and keep `/etc/default/cron-secret` readable only by root.
+- Keep `AUTH_COOKIE_SECURE=true` when using HTTPS. Only set it to `false` on trusted private HTTP networks.
 - Keep the app behind your private network or authenticated reverse proxy.
 - Child PIN values are stored as salted hashes.
 - Use the parent session to download encrypted-at-rest backups from `/api/backup`.
