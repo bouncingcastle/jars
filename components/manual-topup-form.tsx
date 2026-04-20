@@ -1,8 +1,9 @@
 "use client";
 
 import { useActionState } from "react";
-import { addManualAllowanceAction, ActionResult } from "@/app/actions";
-import { ChildSnapshot } from "@/lib/types";
+import { addManualAllowanceAction } from "@/app/actions";
+import type { ActionResult } from "@/app/actions";
+import type { ChildSnapshot } from "@/lib/types";
 
 interface ManualTopupFormProps {
   children: ChildSnapshot[];

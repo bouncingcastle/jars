@@ -38,7 +38,7 @@ A mobile-first homelab web app for teaching children the Barefoot Investor jars 
 
 ## Local development
 
-1. Copy `.env.example` to `.env.local` and set strong values for `AUTH_SECRET` and `PARENT_PASSWORD`.
+1. Copy `.env.example` to `.env.local` and set strong values for `AUTH_SECRET`, `PARENT_PASSWORD`, and `CRON_SECRET`.
 1. Install Node.js 22.
 2. Run `npm install`.
 3. Run `npm run dev`.
@@ -81,7 +81,7 @@ cd /opt/kids-jars
 
 # Configure environment
 cp .env.example .env.local
-nano .env.local   # set AUTH_SECRET and PARENT_PASSWORD
+nano .env.local   # set AUTH_SECRET, PARENT_PASSWORD, and CRON_SECRET
 
 # Build
 npm install
@@ -96,8 +96,16 @@ chown www-data:www-data data
 
 ```bash
 cp deploy/systemd/kids-jars.service /etc/systemd/system/
+cp deploy/systemd/kids-jars-cron.service /etc/systemd/system/
+cp deploy/systemd/kids-jars-cron.timer /etc/systemd/system/
+
+# write the cron secret from .env.local to /etc/default/cron-secret
+echo "your-cron-secret" > /etc/default/cron-secret
+chmod 600 /etc/default/cron-secret
+
 systemctl daemon-reload
 systemctl enable --now kids-jars
+systemctl enable --now kids-jars-cron.timer
 ```
 
 Verify it's running:
@@ -147,9 +155,14 @@ systemctl restart kids-jars
 
 - Set a long random `AUTH_SECRET` in production.
 - Set a strong `PARENT_PASSWORD` and rotate it periodically.
+- Set a random `CRON_SECRET` and keep `/etc/default/cron-secret` readable only by root.
 - Keep the app behind your private network or authenticated reverse proxy.
 - Child PIN values are stored as salted hashes.
 - Use the parent session to download encrypted-at-rest backups from `/api/backup`.
+
+## Bug tracking
+
+- Track active production issues in `BUGS.md`.
 
 ## Backlog
 
@@ -159,6 +172,5 @@ systemctl restart kids-jars
 - Replace JSON persistence with SQLite and Prisma
 - Backup restore flow with signed imports and audit trail
 - Configurable jar split percentages per child (currently Barefoot defaults)
-- Child profile deletion from admin
 - Multi-currency / locale-aware formatting
 - Push notification reminders for weekly sorting

@@ -5,4 +5,4 @@ After=kids-jars.service
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/curl -sf -H "x-cron-secret: %d/cron-secret" http://127.0.0.1:3000/api/cron
+ExecStart=/bin/sh -c 'SECRET=$(cat /etc/default/cron-secret); exec /usr/bin/curl -sf -H "x-cron-secret: ${SECRET}" http://127.0.0.1:3000/api/cron'

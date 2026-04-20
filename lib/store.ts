@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { defaultStore } from "@/lib/default-store";
 import { hashPin, verifyPin } from "@/lib/pin";
@@ -19,11 +19,22 @@ async function ensureStore() {
 export async function readStore() {
   await ensureStore();
   const raw = await readFile(storePath, "utf8");
-  return JSON.parse(raw) as HouseholdStore;
+  try {
+    return JSON.parse(raw) as HouseholdStore;
+  } catch {
+    // Recover from corrupted JSON writes by preserving the broken file and resetting.
+    const corruptPath = `${storePath}.corrupt-${Date.now()}.json`;
+    await writeFile(corruptPath, raw, "utf8");
+    const recovered = structuredClone(defaultStore) as HouseholdStore;
+    await writeStore(recovered);
+    return recovered;
+  }
 }
 
 async function writeStore(store: HouseholdStore) {
-  await writeFile(storePath, JSON.stringify(store, null, 2), "utf8");
+  const tmpPath = `${storePath}.tmp`;
+  await writeFile(tmpPath, JSON.stringify(store, null, 2), "utf8");
+  await rename(tmpPath, storePath);
 }
 
 function makeUniqueChildId(store: HouseholdStore, preferred: string) {

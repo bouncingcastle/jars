@@ -97,11 +97,15 @@ export function AllocationBoard({ childId, availableCents, currency, mode, jars,
   }
 
   function humanizeError(message: string) {
-    if (message.includes("exceeds available")) {
+    const normalized = message.toLowerCase();
+    if (normalized.includes("exceed") || normalized.includes("more coins")) {
       return mode === "little" ? "Oops, that is more coins than you have." : "That split is above your available amount.";
     }
-    if (message.includes("unlock")) {
+    if (normalized.includes("unlock") || normalized.includes("session")) {
       return mode === "little" ? "Please open your profile first with your PIN." : "Unlock this profile first, then try again.";
+    }
+    if (normalized.includes("not enabled")) {
+      return mode === "little" ? "That jar is not open for this profile yet." : "That jar is disabled for this child profile.";
     }
     return mode === "little" ? "Hmm, let us try that again." : "Something did not save. Please try again.";
   }

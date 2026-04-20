@@ -1,8 +1,9 @@
 "use client";
 
 import { useActionState } from "react";
-import { childUnlockAction, parentLoginAction, ActionResult } from "@/app/actions";
-import { KidTone } from "@/lib/kid-copy";
+import { childUnlockAction, parentLoginAction } from "@/app/actions";
+import type { ActionResult } from "@/app/actions";
+import type { KidTone } from "@/lib/kid-copy";
 
 interface ChildUnlockFormProps {
   childId: string;

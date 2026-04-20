@@ -1,8 +1,8 @@
 "use client";
 
 import { useActionState } from "react";
-import { saveChildProfileAction, ActionResult } from "@/app/actions";
-
+import { saveChildProfileAction } from "@/app/actions";
+import type { ActionResult } from "@/app/actions";
 export function NewChildForm() {
   const [state, action, pending] = useActionState<ActionResult | null, FormData>(saveChildProfileAction, null);
 

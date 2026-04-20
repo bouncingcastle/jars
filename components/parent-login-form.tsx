@@ -1,7 +1,8 @@
 "use client";
 
 import { useActionState } from "react";
-import { parentLoginAction, ActionResult } from "@/app/actions";
+import { parentLoginAction } from "@/app/actions";
+import type { ActionResult } from "@/app/actions";
 
 export function ParentLoginForm() {
   const [state, action, pending] = useActionState<ActionResult | null, FormData>(parentLoginAction, null);

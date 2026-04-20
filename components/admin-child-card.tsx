@@ -1,8 +1,9 @@
 "use client";
 
 import { useActionState } from "react";
-import { saveChildProfileAction, deleteChildAction, ActionResult } from "@/app/actions";
-import { ChildSnapshot } from "@/lib/types";
+import { saveChildProfileAction, deleteChildAction } from "@/app/actions";
+import type { ActionResult } from "@/app/actions";
+import type { ChildSnapshot } from "@/lib/types";
 import { formatCurrency } from "@/lib/money";
 
 interface AdminChildCardProps {

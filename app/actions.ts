@@ -67,8 +67,9 @@ export async function saveChildProfileAction(_prev: ActionResult | null, formDat
       goalName,
       goalAmountCents
     });
-  } catch {
-    return { error: "Failed to save profile. Please try again." };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to save profile. Please try again.";
+    return { error: message };
   }
 
   revalidatePath("/");
@@ -86,8 +87,9 @@ export async function deleteChildAction(_prev: ActionResult | null, formData: Fo
 
   try {
     await deleteChild(childId);
-  } catch {
-    return { error: "Failed to delete. Please try again." };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to delete. Please try again.";
+    return { error: message };
   }
 
   revalidatePath("/");
@@ -108,8 +110,9 @@ export async function addManualAllowanceAction(_prev: ActionResult | null, formD
 
   try {
     await addManualAllowance(childId, amount, note);
-  } catch {
-    return { error: "Failed to add allowance. Please try again." };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to add allowance. Please try again.";
+    return { error: message };
   }
 
   revalidatePath("/");
@@ -134,8 +137,9 @@ export async function allocateFundsAction(formData: FormData): Promise<ActionRes
 
   try {
     await allocateFunds(childId, { spend, save, give, grow });
-  } catch {
-    return { error: "Could not sort funds. You may have exceeded the available amount." };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Could not sort funds. Please try again.";
+    return { error: message };
   }
 
   revalidatePath("/");
