@@ -20,7 +20,7 @@ Track active production issues here. Keep entries short and update status as fix
 - Reported: 2026-04-20
 - Symptom: Production shows generic "An error occurred in the Server Components render" after form submissions.
 - Status: In progress
-- Notes: Added action hardening and store corruption recovery. Validate on production after deploy.
+- Notes: Added action hardening, store corruption recovery, and non-fatal revalidatePath handling. Validate on production after deploy.
 
 ## Recently fixed
 

@@ -24,6 +24,16 @@ import {
 
 export type ActionResult = { error: string } | { success: true };
 
+function safeRevalidate(paths: string[]) {
+  for (const path of paths) {
+    try {
+      revalidatePath(path);
+    } catch (error) {
+      console.error("[actions] revalidatePath failed", { path, error });
+    }
+  }
+}
+
 async function requireParentSession(): Promise<string | null> {
   const isParent = await hasParentSession();
   if (!isParent) {
@@ -72,9 +82,7 @@ export async function saveChildProfileAction(_prev: ActionResult | null, formDat
     return { error: message };
   }
 
-  revalidatePath("/");
-  revalidatePath("/admin");
-  revalidatePath("/child");
+  safeRevalidate(["/", "/admin", "/child"]);
   return { success: true };
 }
 
@@ -92,9 +100,7 @@ export async function deleteChildAction(_prev: ActionResult | null, formData: Fo
     return { error: message };
   }
 
-  revalidatePath("/");
-  revalidatePath("/admin");
-  revalidatePath("/child");
+  safeRevalidate(["/", "/admin", "/child"]);
   return { success: true };
 }
 
@@ -115,9 +121,7 @@ export async function addManualAllowanceAction(_prev: ActionResult | null, formD
     return { error: message };
   }
 
-  revalidatePath("/");
-  revalidatePath("/admin");
-  revalidatePath(`/child/${childId}`);
+  safeRevalidate(["/", "/admin", `/child/${childId}`]);
   return { success: true };
 }
 
@@ -142,10 +146,7 @@ export async function allocateFundsAction(formData: FormData): Promise<ActionRes
     return { error: message };
   }
 
-  revalidatePath("/");
-  revalidatePath("/child");
-  revalidatePath(`/child/${childId}`);
-  revalidatePath("/admin");
+  safeRevalidate(["/", "/child", `/child/${childId}`, "/admin"]);
   return { success: true };
 }
 
@@ -183,13 +184,17 @@ export async function childUnlockAction(_prev: ActionResult | null, formData: Fo
   }
 
   await createChildSession(childId);
-  revalidatePath(`/child/${childId}`);
+  safeRevalidate([`/child/${childId}`]);
   return { success: true };
 }
 
 export async function childLockAction(formData: FormData) {
-  const childId = String(formData.get("childId") || "");
-  if (!childId) return;
-  await clearChildSession(childId);
-  revalidatePath(`/child/${childId}`);
+  try {
+    const childId = String(formData.get("childId") || "");
+    if (!childId) return;
+    await clearChildSession(childId);
+    safeRevalidate([`/child/${childId}`]);
+  } catch (error) {
+    console.error("[actions] childLockAction failed", error);
+  }
 }
