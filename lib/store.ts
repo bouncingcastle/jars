@@ -24,9 +24,17 @@ export async function readStore() {
   } catch {
     // Recover from corrupted JSON writes by preserving the broken file and resetting.
     const corruptPath = `${storePath}.corrupt-${Date.now()}.json`;
-    await writeFile(corruptPath, raw, "utf8");
+    try {
+      await writeFile(corruptPath, raw, "utf8");
+    } catch (error) {
+      console.error("[store] failed to write corrupt backup", error);
+    }
     const recovered = structuredClone(defaultStore) as HouseholdStore;
-    await writeStore(recovered);
+    try {
+      await writeStore(recovered);
+    } catch (error) {
+      console.error("[store] failed to persist recovered store", error);
+    }
     return recovered;
   }
 }
@@ -138,7 +146,12 @@ export async function syncScheduledAllowances() {
 
   if (changed) {
     store.ledger.sort((left, right) => left.createdAt.localeCompare(right.createdAt));
-    await writeStore(store);
+    try {
+      await writeStore(store);
+    } catch (error) {
+      // Do not break page rendering if scheduled sync cannot be persisted.
+      console.error("[store] syncScheduledAllowances write failed", error);
+    }
   }
 
   return store;
