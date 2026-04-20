@@ -108,18 +108,17 @@ export function AllocationBoard({ childId, availableCents, currency, mode, jars,
 
   async function handleSubmit(formData: FormData) {
     setFeedback(null);
-    try {
-      await allocateFundsAction(formData);
-      setDraft(zeroDraft);
-      setCelebrating(true);
-      playSuccessChime();
-      setTimeout(() => playBadgeUnlock(), 600);
-      setFeedback(mode === "little" ? "Awesome sorting!" : "Great allocation. Nicely done.");
-      setTimeout(() => setCelebrating(false), 1400);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown error";
-      setFeedback(humanizeError(message));
+    const result = await allocateFundsAction(formData);
+    if ("error" in result) {
+      setFeedback(humanizeError(result.error));
+      return;
     }
+    setDraft(zeroDraft);
+    setCelebrating(true);
+    playSuccessChime();
+    setTimeout(() => playBadgeUnlock(), 600);
+    setFeedback(mode === "little" ? "Awesome sorting!" : "Great allocation. Nicely done.");
+    setTimeout(() => setCelebrating(false), 1400);
   }
 
   return (

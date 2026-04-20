@@ -1,0 +1,8 @@
+[Unit]
+Description=Kids Jars scheduled allowance sync
+Requires=kids-jars.service
+After=kids-jars.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/curl -sf -H "x-cron-secret: %d/cron-secret" http://127.0.0.1:3000/api/cron

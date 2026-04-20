@@ -1,4 +1,7 @@
-import { addManualAllowanceAction } from "@/app/actions";
+"use client";
+
+import { useActionState } from "react";
+import { addManualAllowanceAction, ActionResult } from "@/app/actions";
 import { ChildSnapshot } from "@/lib/types";
 
 interface ManualTopupFormProps {
@@ -6,6 +9,8 @@ interface ManualTopupFormProps {
 }
 
 export function ManualTopupForm({ children }: ManualTopupFormProps) {
+  const [state, action, pending] = useActionState<ActionResult | null, FormData>(addManualAllowanceAction, null);
+
   return (
     <section className="panel">
       <div className="section-heading">
@@ -14,7 +19,7 @@ export function ManualTopupForm({ children }: ManualTopupFormProps) {
           <h2>Add bonus pocket money</h2>
         </div>
       </div>
-      <form action={addManualAllowanceAction} className="stack-form">
+      <form action={action} className="stack-form">
         <label>
           Child
           <select name="childId" required>
@@ -33,7 +38,11 @@ export function ManualTopupForm({ children }: ManualTopupFormProps) {
           Note
           <input name="note" placeholder="Helping with chores" />
         </label>
-        <button className="primary-button" type="submit">Add top-up</button>
+        <button className="primary-button" type="submit" disabled={pending}>
+          {pending ? "Adding…" : "Add top-up"}
+        </button>
+        {state && "error" in state && <p className="form-error">{state.error}</p>}
+        {state && "success" in state && <p className="form-success">Top-up added!</p>}
       </form>
     </section>
   );

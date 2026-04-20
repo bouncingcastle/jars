@@ -279,6 +279,17 @@ export async function addManualAllowance(childId: string, amountCents: number, n
   await writeStore(store);
 }
 
+export async function deleteChild(childId: string) {
+  const store = await readStore();
+  const index = store.children.findIndex((child) => child.id === childId);
+  if (index === -1) {
+    throw new Error("Child not found");
+  }
+  store.children.splice(index, 1);
+  store.ledger = store.ledger.filter((entry) => entry.childId !== childId);
+  await writeStore(store);
+}
+
 export async function allocateFunds(childId: string, allocations: Partial<Record<JarKey, number>>) {
   const store = await readStore();
   const snapshot = buildChildSnapshot(store, childId);

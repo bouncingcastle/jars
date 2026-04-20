@@ -1,4 +1,7 @@
-import { saveChildProfileAction } from "@/app/actions";
+"use client";
+
+import { useActionState } from "react";
+import { saveChildProfileAction, deleteChildAction, ActionResult } from "@/app/actions";
 import { ChildSnapshot } from "@/lib/types";
 import { formatCurrency } from "@/lib/money";
 
@@ -8,6 +11,9 @@ interface AdminChildCardProps {
 }
 
 export function AdminChildCard({ child, currency }: AdminChildCardProps) {
+  const [saveState, saveAction, savePending] = useActionState<ActionResult | null, FormData>(saveChildProfileAction, null);
+  const [deleteState, deleteAction, deletePending] = useActionState<ActionResult | null, FormData>(deleteChildAction, null);
+
   return (
     <article className="panel admin-child-card">
       <div className="section-heading">
@@ -17,7 +23,7 @@ export function AdminChildCard({ child, currency }: AdminChildCardProps) {
         </div>
         <strong>{formatCurrency(child.availableCents, currency)} unallocated</strong>
       </div>
-      <form action={saveChildProfileAction} className="stack-form">
+      <form action={saveAction} className="stack-form">
         <input type="hidden" name="id" value={child.profile.id} />
         <label>
           Name
@@ -62,7 +68,27 @@ export function AdminChildCard({ child, currency }: AdminChildCardProps) {
           <input defaultChecked={child.profile.investingEnabled} name="investingEnabled" type="checkbox" />
           Grow jar enabled
         </label>
-        <button className="secondary-button" type="submit">Save profile</button>
+        <button className="secondary-button" type="submit" disabled={savePending}>
+          {savePending ? "Saving…" : "Save profile"}
+        </button>
+        {saveState && "error" in saveState && <p className="form-error">{saveState.error}</p>}
+        {saveState && "success" in saveState && <p className="form-success">Saved.</p>}
+      </form>
+      <form action={deleteAction} className="stack-form" style={{ marginTop: "1rem" }}>
+        <input type="hidden" name="childId" value={child.profile.id} />
+        <button
+          className="danger-button"
+          type="submit"
+          disabled={deletePending}
+          onClick={(e) => {
+            if (!confirm(`Remove ${child.profile.name}? This deletes all their data.`)) {
+              e.preventDefault();
+            }
+          }}
+        >
+          {deletePending ? "Removing…" : `Remove ${child.profile.name}`}
+        </button>
+        {deleteState && "error" in deleteState && <p className="form-error">{deleteState.error}</p>}
       </form>
     </article>
   );

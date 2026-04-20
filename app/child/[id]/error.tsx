@@ -13,7 +13,7 @@ export default function ChildError({
     <main className="screen-shell" style={{ textAlign: "center", padding: "3rem 1.5rem" }}>
       <h1 style={{ fontSize: "1.6rem", marginBottom: "0.5rem" }}>Something went wrong</h1>
       <p style={{ color: "#6b7a84", marginBottom: "1.5rem" }}>
-        {error.message || "We hit a snag loading this page."}
+        We hit a snag loading this page.
       </p>
       <button className="primary-button" onClick={reset} style={{ marginRight: "0.75rem" }}>
         Try again

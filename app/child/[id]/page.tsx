@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
-import { childLockAction, childUnlockAction, parentLoginAction } from "@/app/actions";
+import { childLockAction } from "@/app/actions";
 import { AllocationBoard } from "@/components/allocation-board";
 import { ChildShell } from "@/components/child-shell";
+import { ChildUnlockForm } from "@/components/child-unlock-form";
 import { FirstMission } from "@/components/first-mission";
 import { GoalStoryCard } from "@/components/goal-story-card";
 import { HistoryChart } from "@/components/history-chart";
@@ -64,22 +65,7 @@ export default async function ChildDetailPage({ params }: { params: Promise<{ id
           title={tone.lockTitle}
           subtitle={tone.lockSubtitle}
         >
-          <form action={childUnlockAction} className="stack-form">
-            <input name="childId" type="hidden" value={id} />
-            <label>
-              Child PIN
-              <input inputMode="numeric" maxLength={6} minLength={4} name="pin" pattern="[0-9]{4,6}" required />
-            </label>
-            <button className="primary-button" type="submit">{tone.lockButton}</button>
-          </form>
-          <form action={parentLoginAction} className="stack-form">
-            <input type="hidden" name="next" value={`/child/${id}`} />
-            <label>
-              Parent password
-              <input name="password" type="password" minLength={8} autoComplete="current-password" required />
-            </label>
-            <button className="secondary-button" type="submit">Enter as parent</button>
-          </form>
+          <ChildUnlockForm childId={id} tone={tone} />
         </LockScreen>
       </main>
     );

@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import {
   addManualAllowance,
   allocateFunds,
+  deleteChild,
   getChildProfile,
   upsertChildProfile,
   verifyChildPin
@@ -21,15 +22,19 @@ import {
   verifyParentPassword
 } from "@/lib/auth";
 
-async function requireParentSession() {
+export type ActionResult = { error: string } | { success: true };
+
+async function requireParentSession(): Promise<string | null> {
   const isParent = await hasParentSession();
   if (!isParent) {
-    throw new Error("Parent authentication is required");
+    return "Parent session expired. Please log in again.";
   }
+  return null;
 }
 
-export async function saveChildProfileAction(formData: FormData) {
-  await requireParentSession();
+export async function saveChildProfileAction(_prev: ActionResult | null, formData: FormData): Promise<ActionResult> {
+  const authError = await requireParentSession();
+  if (authError) return { error: authError };
 
   const name = String(formData.get("name") || "").trim();
   const pin = String(formData.get("pin") || "").trim();
@@ -42,103 +47,115 @@ export async function saveChildProfileAction(formData: FormData) {
   const goalAmountCents = parseCurrencyInput(String(formData.get("goalAmount") || "0"));
   const id = String(formData.get("id") || "").trim();
 
-  if (!name) {
-    throw new Error("Name is required");
-  }
+  if (!name) return { error: "Name is required." };
+  if (pin && !/^\d{4,6}$/.test(pin)) return { error: "PIN must be 4 to 6 digits." };
+  if (!id && !pin) return { error: "PIN is required for new children." };
+  if (!goalName) return { error: "Goal name is required." };
+  if (goalAmountCents < 100) return { error: "Goal amount must be at least $1.00." };
+  if (mode !== "little" && mode !== "big") return { error: "Invalid kid mode." };
 
-  if (pin && !/^\d{4,6}$/.test(pin)) {
-    throw new Error("PIN must be 4 to 6 digits");
+  try {
+    await upsertChildProfile({
+      id: id || undefined,
+      name,
+      pin: pin || undefined,
+      allowanceCents: parseCurrencyInput(allowance),
+      schedule,
+      scheduleAnchor,
+      investingEnabled,
+      mode,
+      goalName,
+      goalAmountCents
+    });
+  } catch {
+    return { error: "Failed to save profile. Please try again." };
   }
-
-  if (!id && !pin) {
-    throw new Error("PIN is required for new children");
-  }
-
-  if (!goalName) {
-    throw new Error("Goal name is required");
-  }
-
-  if (goalAmountCents < 100) {
-    throw new Error("Goal amount must be at least 1.00");
-  }
-
-  if (mode !== "little" && mode !== "big") {
-    throw new Error("Invalid kid mode");
-  }
-
-  await upsertChildProfile({
-    id: id || undefined,
-    name,
-    pin: pin || undefined,
-    allowanceCents: parseCurrencyInput(allowance),
-    schedule,
-    scheduleAnchor,
-    investingEnabled,
-    mode,
-    goalName,
-    goalAmountCents
-  });
 
   revalidatePath("/");
   revalidatePath("/admin");
   revalidatePath("/child");
+  return { success: true };
 }
 
-export async function addManualAllowanceAction(formData: FormData) {
-  await requireParentSession();
+export async function deleteChildAction(_prev: ActionResult | null, formData: FormData): Promise<ActionResult> {
+  const authError = await requireParentSession();
+  if (authError) return { error: authError };
+
+  const childId = String(formData.get("childId") || "").trim();
+  if (!childId) return { error: "No child selected." };
+
+  try {
+    await deleteChild(childId);
+  } catch {
+    return { error: "Failed to delete. Please try again." };
+  }
+
+  revalidatePath("/");
+  revalidatePath("/admin");
+  revalidatePath("/child");
+  return { success: true };
+}
+
+export async function addManualAllowanceAction(_prev: ActionResult | null, formData: FormData): Promise<ActionResult> {
+  const authError = await requireParentSession();
+  if (authError) return { error: authError };
 
   const childId = String(formData.get("childId") || "");
   const amount = parseCurrencyInput(String(formData.get("amount") || "0"));
   const note = String(formData.get("note") || "Bonus pocket money");
 
-  if (!childId || amount <= 0) {
-    throw new Error("Child and amount are required");
+  if (!childId || amount <= 0) return { error: "Child and a valid amount are required." };
+
+  try {
+    await addManualAllowance(childId, amount, note);
+  } catch {
+    return { error: "Failed to add allowance. Please try again." };
   }
 
-  await addManualAllowance(childId, amount, note);
   revalidatePath("/");
   revalidatePath("/admin");
   revalidatePath(`/child/${childId}`);
+  return { success: true };
 }
 
-export async function allocateFundsAction(formData: FormData) {
+export async function allocateFundsAction(formData: FormData): Promise<ActionResult> {
   const childId = String(formData.get("childId") || "");
   const spend = parseCurrencyInput(String(formData.get("spend") || "0"));
   const save = parseCurrencyInput(String(formData.get("save") || "0"));
   const give = parseCurrencyInput(String(formData.get("give") || "0"));
   const grow = parseCurrencyInput(String(formData.get("grow") || "0"));
 
-  if (!childId) {
-    throw new Error("Child is required");
-  }
-
-  if ([spend, save, give, grow].some((amount) => amount < 0)) {
-    throw new Error("Amounts cannot be negative");
-  }
+  if (!childId) return { error: "Child is required." };
+  if ([spend, save, give, grow].some((amount) => amount < 0)) return { error: "Amounts cannot be negative." };
 
   const isParent = await hasParentSession();
   const isChild = await hasChildSession(childId);
-  if (!isParent && !isChild) {
-    throw new Error("Please unlock this child profile first");
+  if (!isParent && !isChild) return { error: "Please unlock this child profile first." };
+
+  try {
+    await allocateFunds(childId, { spend, save, give, grow });
+  } catch {
+    return { error: "Could not sort funds. You may have exceeded the available amount." };
   }
 
-  await allocateFunds(childId, { spend, save, give, grow });
   revalidatePath("/");
   revalidatePath("/child");
   revalidatePath(`/child/${childId}`);
   revalidatePath("/admin");
+  return { success: true };
 }
 
-export async function parentLoginAction(formData: FormData) {
+export async function parentLoginAction(_prev: ActionResult | null, formData: FormData): Promise<ActionResult> {
   const password = String(formData.get("password") || "");
-  const nextPath = String(formData.get("next") || "/admin");
 
   if (!verifyParentPassword(password)) {
-    throw new Error("Incorrect parent password");
+    return { error: "Incorrect password." };
   }
 
   await createParentSession();
-  redirect((nextPath.startsWith("/") ? nextPath : "/admin") as "/admin");
+  const next = String(formData.get("next") || "/admin");
+  const safeNext = next.startsWith("/") ? next : "/admin";
+  redirect(safeNext as "/admin");
 }
 
 export async function parentLogoutAction() {
@@ -146,36 +163,29 @@ export async function parentLogoutAction() {
   redirect("/");
 }
 
-export async function childUnlockAction(formData: FormData) {
+export async function childUnlockAction(_prev: ActionResult | null, formData: FormData): Promise<ActionResult> {
   const childId = String(formData.get("childId") || "");
   const pin = String(formData.get("pin") || "").trim();
 
-  if (!/^\d{4,6}$/.test(pin)) {
-    throw new Error("PIN must be 4 to 6 digits");
-  }
+  if (!/^\d{4,6}$/.test(pin)) return { error: "PIN must be 4 to 6 digits." };
 
   const child = await getChildProfile(childId);
-  if (!child) {
-    throw new Error("Child not found");
-  }
+  if (!child) return { error: "Child not found." };
 
   const isParent = await hasParentSession();
   if (!isParent) {
     const valid = await verifyChildPin(childId, pin);
-    if (!valid) {
-      throw new Error("Incorrect PIN");
-    }
+    if (!valid) return { error: "Incorrect PIN. Try again." };
   }
 
   await createChildSession(childId);
   revalidatePath(`/child/${childId}`);
+  return { success: true };
 }
 
 export async function childLockAction(formData: FormData) {
   const childId = String(formData.get("childId") || "");
-  if (!childId) {
-    return;
-  }
+  if (!childId) return;
   await clearChildSession(childId);
   revalidatePath(`/child/${childId}`);
 }

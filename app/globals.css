@@ -357,8 +357,21 @@ button {
   margin: 0;
 }
 
+.form-error {
+  color: #d32f2f;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.form-success {
+  color: #2e7d32;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
 .primary-button,
-.secondary-button {
+.secondary-button,
+.danger-button {
   border-radius: 999px;
   padding: 0.85rem 1.15rem;
   font-weight: 800;
@@ -372,6 +385,15 @@ button {
 .secondary-button {
   background: rgba(0, 121, 107, 0.1);
   color: var(--teal);
+}
+
+.danger-button {
+  background: #d32f2f;
+  color: white;
+}
+
+.danger-button:disabled {
+  opacity: 0.6;
 }
 
 .allocation-form {

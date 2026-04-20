@@ -3,8 +3,10 @@ import { AdminChildCard } from "@/components/admin-child-card";
 import { FamilyPromptCard } from "@/components/family-prompt-card";
 import { LockScreen } from "@/components/lock-screen";
 import { ManualTopupForm } from "@/components/manual-topup-form";
+import { NewChildForm } from "@/components/new-child-form";
+import { ParentLoginForm } from "@/components/parent-login-form";
 import { StatCard } from "@/components/stat-card";
-import { parentLoginAction, parentLogoutAction, saveChildProfileAction } from "@/app/actions";
+import { parentLogoutAction } from "@/app/actions";
 import { hasParentSession } from "@/lib/auth";
 import { getHouseholdSnapshot } from "@/lib/store";
 import { formatCurrency } from "@/lib/money";
@@ -25,14 +27,7 @@ export default async function AdminPage() {
         </header>
 
         <LockScreen title="Parent login required" subtitle="Use your household password to manage allowances and profiles.">
-          <form action={parentLoginAction} className="stack-form">
-            <input type="hidden" name="next" value="/admin" />
-            <label>
-              Password
-              <input name="password" type="password" autoComplete="current-password" minLength={8} required />
-            </label>
-            <button className="primary-button" type="submit">Enter parent mode</button>
-          </form>
+          <ParentLoginForm />
         </LockScreen>
       </main>
     );
@@ -73,52 +68,7 @@ export default async function AdminPage() {
             <h2>Add a profile</h2>
           </div>
         </div>
-        <form action={saveChildProfileAction} className="stack-form">
-          <label>
-            Name
-            <input name="name" placeholder="Mia" required />
-          </label>
-          <label>
-            PIN
-            <input inputMode="numeric" minLength={4} maxLength={6} name="pin" pattern="[0-9]{4,6}" placeholder="1234" required />
-          </label>
-          <label>
-            Pocket money
-            <input inputMode="decimal" name="allowance" placeholder="10.00" required />
-          </label>
-          <label>
-            Kid mode
-            <select name="mode" defaultValue="big">
-              <option value="little">Little Kids (ages 5-8)</option>
-              <option value="big">Big Kids (ages 9+)</option>
-            </select>
-          </label>
-          <label>
-            Goal name
-            <input name="goalName" placeholder="Blue scooter" required />
-          </label>
-          <label>
-            Goal amount
-            <input inputMode="decimal" name="goalAmount" placeholder="80.00" required />
-          </label>
-          <label>
-            Schedule
-            <select name="schedule">
-              <option value="weekly">Weekly</option>
-              <option value="fortnightly">Fortnightly</option>
-              <option value="monthly">Monthly</option>
-            </select>
-          </label>
-          <label>
-            Start date
-            <input defaultValue={new Date().toISOString().slice(0, 10)} name="scheduleAnchor" type="date" required />
-          </label>
-          <label className="checkbox-row">
-            <input name="investingEnabled" type="checkbox" />
-            Enable the Grow jar
-          </label>
-          <button className="primary-button" type="submit">Create child</button>
-        </form>
+        <NewChildForm />
       </section>
 
       <ManualTopupForm children={household.children} />
