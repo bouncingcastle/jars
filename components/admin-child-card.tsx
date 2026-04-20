@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { saveChildProfileAction, deleteChildAction } from "@/app/actions";
 import type { ActionResult } from "@/app/actions";
 import type { ChildSnapshot } from "@/lib/types";
+import { THEMES } from "@/lib/themes";
 import { formatCurrency } from "@/lib/money";
 
 interface AdminChildCardProps {
@@ -68,6 +69,16 @@ export function AdminChildCard({ child, currency }: AdminChildCardProps) {
         <label className="checkbox-row">
           <input defaultChecked={child.profile.investingEnabled} name="investingEnabled" type="checkbox" />
           Grow jar enabled
+        </label>
+        <label>
+          Theme
+          <select defaultValue={child.profile.theme ?? "default"} name="theme">
+            {THEMES.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.emoji} {t.label} — {t.description}
+              </option>
+            ))}
+          </select>
         </label>
         <button className="secondary-button" type="submit" disabled={savePending}>
           {savePending ? "Saving…" : "Save profile"}

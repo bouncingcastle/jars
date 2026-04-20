@@ -88,7 +88,7 @@ export default async function ChildDetailPage({ params }: { params: Promise<{ id
     const tone = getKidTone(child.mode);
 
     return (
-      <main className={`screen-shell kid-mode-${child.mode}`}>
+      <main className={`screen-shell kid-mode-${child.mode}`} data-theme={child.theme ?? "default"}>
         <header className="screen-shell__header">
           <Link className="back-link" href="/child">
             Back
@@ -139,7 +139,7 @@ export default async function ChildDetailPage({ params }: { params: Promise<{ id
   const nextPaydayIso = upcomingPaydays[0] ?? null;
 
   return (
-    <main className={`kid-page kid-mode-${snapshot.profile.mode}`}>
+    <main className={`kid-page kid-mode-${snapshot.profile.mode}`} data-theme={snapshot.profile.theme ?? "default"}>
       <ChildShell
         profile={snapshot.profile}
         controls={

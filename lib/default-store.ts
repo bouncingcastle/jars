@@ -23,6 +23,7 @@ export const defaultStore: HouseholdStore = {
         give: 10,
         grow: 0
       },
+      theme: "default",
       createdAt: new Date().toISOString()
     },
     {
@@ -42,6 +43,7 @@ export const defaultStore: HouseholdStore = {
         give: 10,
         grow: 20
       },
+      theme: "default",
       createdAt: new Date().toISOString()
     }
   ],
