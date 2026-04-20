@@ -23,6 +23,7 @@ export const defaultStore: HouseholdStore = {
         give: 10,
         grow: 0
       },
+      jarSplitPreset: "classic",
       theme: "default",
       createdAt: new Date().toISOString()
     },
@@ -43,9 +44,11 @@ export const defaultStore: HouseholdStore = {
         give: 10,
         grow: 20
       },
+      jarSplitPreset: "growth",
       theme: "default",
       createdAt: new Date().toISOString()
     }
   ],
-  ledger: []
+  ledger: [],
+  quests: []
 };

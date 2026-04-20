@@ -168,11 +168,18 @@ systemctl restart kids-jars
 
 ## Backlog
 
+### Prioritized next
+
+- **Quest management** — parent can create/edit/archive quests and kids see live progress + rewards
+- **Closest badge callout** — show the nearest unlock with an at-a-glance progress ring/chip near top stats
+- **Configurable jar split percentages** — parent-managed per-child presets/custom split targets
+
+### Remaining backlog
+
 - **Dark mode** — respect `prefers-color-scheme` and add a toggle
 - **Offline PWA** — service worker with cache-first strategy for static assets
 - **Haptic feedback** — `navigator.vibrate()` on coin taps for mobile devices
 - Replace JSON persistence with SQLite and Prisma
 - Backup restore flow with signed imports and audit trail
-- Configurable jar split percentages per child (currently Barefoot defaults)
 - Multi-currency / locale-aware formatting
 - Push notification reminders for weekly sorting

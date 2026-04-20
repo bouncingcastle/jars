@@ -3,6 +3,26 @@ export type ScheduleType = "weekly" | "fortnightly" | "monthly";
 export type EntryType = "scheduled_allowance" | "manual_allowance" | "allocation";
 export type ChildMode = "little" | "big";
 export type ThemeId = "default" | "peppa" | "ocean" | "sunshine";
+export type JarSplitPreset = "classic" | "saver" | "giver" | "growth" | "custom";
+export type QuestType = "save_balance" | "give_balance" | "streak_weeks";
+
+export interface Quest {
+  id: string;
+  childId: string;
+  title: string;
+  type: QuestType;
+  targetValue: number;
+  reward: string;
+  archived: boolean;
+  createdAt: string;
+}
+
+export interface QuestProgress extends Quest {
+  progressValue: number;
+  progressPercent: number;
+  complete: boolean;
+  progressLabel: string;
+}
 
 export interface ChildProfile {
   id: string;
@@ -17,6 +37,7 @@ export interface ChildProfile {
   schedule: ScheduleType;
   scheduleAnchor: string;
   jarTargets: Record<JarKey, number>;
+  jarSplitPreset?: JarSplitPreset;
   theme: ThemeId;
   createdAt: string;
 }
@@ -35,6 +56,7 @@ export interface HouseholdStore {
   currency: string;
   children: ChildProfile[];
   ledger: LedgerEntry[];
+  quests: Quest[];
 }
 
 export interface ChildSnapshot {
