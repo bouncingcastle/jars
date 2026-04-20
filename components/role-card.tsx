@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { ReactNode } from "react";
+import { Route } from "next";
 
 interface RoleCardProps {
-  href: string;
+  href: Route;
   eyebrow: string;
   title: string;
   description: string;
