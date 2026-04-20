@@ -775,6 +775,46 @@ button {
   font-size: 0.86rem;
 }
 
+.payday-mini-calendar {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.45rem;
+}
+
+.payday-mini-calendar__item {
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(0, 121, 107, 0.2);
+  padding: 0.45rem 0.5rem;
+  display: grid;
+  gap: 0.12rem;
+}
+
+.payday-mini-calendar__item small {
+  color: var(--muted);
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.payday-mini-calendar__item strong {
+  color: var(--ink);
+  font-size: 0.9rem;
+}
+
+.payday-mini-calendar__item span {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.payday-mini-calendar__item em {
+  color: var(--teal);
+  font-style: normal;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
 .history-chart__month {
   display: grid;
   gap: 0.5rem;
@@ -905,6 +945,10 @@ button {
   .badge-pill-wrap:focus-within .badge-tooltip,
   .badge-pill-wrap:active .badge-tooltip {
     transform: translateX(0) translateY(0);
+  }
+
+  .payday-mini-calendar {
+    grid-template-columns: 1fr;
   }
 }
 

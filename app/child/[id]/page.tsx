@@ -52,10 +52,10 @@ function addScheduleStep(date: Date, schedule: ScheduleType) {
   return next;
 }
 
-function getNextPocketMoneyIso(anchor: string, schedule: ScheduleType) {
+function getUpcomingPaydays(anchor: string, schedule: ScheduleType, count: number) {
   let cursor = new Date(anchor);
   if (Number.isNaN(cursor.getTime())) {
-    return null;
+    return [] as string[];
   }
 
   const now = new Date();
@@ -66,7 +66,13 @@ function getNextPocketMoneyIso(anchor: string, schedule: ScheduleType) {
     cursor = addScheduleStep(cursor, schedule);
   }
 
-  return cursor.toISOString();
+  const result: string[] = [];
+  for (let i = 0; i < count; i++) {
+    result.push(cursor.toISOString());
+    cursor = addScheduleStep(cursor, schedule);
+  }
+
+  return result;
 }
 
 export default async function ChildDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -129,7 +135,8 @@ export default async function ChildDetailPage({ params }: { params: Promise<{ id
     hint: jarCopy[key].hint,
     currentBalance: snapshot.jarBalances[key]
   }));
-  const nextPaydayIso = getNextPocketMoneyIso(snapshot.profile.scheduleAnchor, snapshot.profile.schedule);
+  const upcomingPaydays = getUpcomingPaydays(snapshot.profile.scheduleAnchor, snapshot.profile.schedule, 3);
+  const nextPaydayIso = upcomingPaydays[0] ?? null;
 
   return (
     <main className={`kid-page kid-mode-${snapshot.profile.mode}`}>
@@ -186,6 +193,7 @@ export default async function ChildDetailPage({ params }: { params: Promise<{ id
           mode={snapshot.profile.mode}
           allowanceCents={snapshot.profile.allowanceCents}
           nextPaydayIso={nextPaydayIso}
+          nextThreePaydays={upcomingPaydays}
           schedule={snapshot.profile.schedule}
         />
         <RecentActivity entries={entries} currency={household.currency} mode={snapshot.profile.mode} />

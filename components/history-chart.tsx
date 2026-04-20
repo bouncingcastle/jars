@@ -12,6 +12,7 @@ interface HistoryChartProps {
   mode: ChildMode;
   allowanceCents: number;
   nextPaydayIso: string | null;
+  nextThreePaydays: string[];
   schedule: ScheduleType;
 }
 
@@ -21,13 +22,24 @@ function scheduleLabel(schedule: ScheduleType) {
   return "every week";
 }
 
-export function HistoryChart({ history, currency, mode, allowanceCents, nextPaydayIso, schedule }: HistoryChartProps) {
+export function HistoryChart({ history, currency, mode, allowanceCents, nextPaydayIso, nextThreePaydays, schedule }: HistoryChartProps) {
   const tone = getKidTone(mode);
   const maxValue = Math.max(...history.flatMap((entry) => [entry.inflowCents, entry.allocatedCents]), 1);
   const nextDate = nextPaydayIso ? new Date(nextPaydayIso) : null;
   const now = new Date();
   now.setHours(0, 0, 0, 0);
   const daysUntilNext = nextDate ? Math.max(Math.ceil((nextDate.getTime() - now.getTime()) / 86400000), 0) : null;
+  const paydayCards = nextThreePaydays
+    .map((iso) => new Date(iso))
+    .filter((date) => !Number.isNaN(date.getTime()))
+    .map((date) => {
+      const daysAway = Math.max(Math.ceil((date.getTime() - now.getTime()) / 86400000), 0);
+      return {
+        date,
+        daysAway,
+        label: daysAway === 0 ? "today" : `in ${daysAway} day${daysAway === 1 ? "" : "s"}`,
+      };
+    });
 
   return (
     <section className="panel">
@@ -45,6 +57,16 @@ export function HistoryChart({ history, currency, mode, allowanceCents, nextPayd
               +{formatCurrency(allowanceCents, currency)} {scheduleLabel(schedule)}
               {daysUntilNext === 0 ? " · today" : ` · in ${daysUntilNext} day${daysUntilNext === 1 ? "" : "s"}`}
             </span>
+            <div className="payday-mini-calendar" role="list" aria-label="Next three paydays">
+              {paydayCards.slice(0, 3).map((item) => (
+                <article className="payday-mini-calendar__item" key={item.date.toISOString()} role="listitem">
+                  <small>{item.date.toLocaleDateString("en-AU", { weekday: "short" })}</small>
+                  <strong>{item.date.toLocaleDateString("en-AU", { day: "numeric", month: "short" })}</strong>
+                  <span>{item.label}</span>
+                  <em>+{formatCurrency(allowanceCents, currency)}</em>
+                </article>
+              ))}
+            </div>
           </>
         ) : (
           <>
