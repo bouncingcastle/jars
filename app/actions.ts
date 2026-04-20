@@ -138,7 +138,7 @@ export async function parentLoginAction(formData: FormData) {
   }
 
   await createParentSession();
-  redirect(nextPath.startsWith("/") ? nextPath : "/admin");
+  redirect((nextPath.startsWith("/") ? nextPath : "/admin") as "/admin");
 }
 
 export async function parentLogoutAction() {
