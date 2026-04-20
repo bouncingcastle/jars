@@ -22,10 +22,16 @@ export async function readStore() {
   const raw = await readFile(storePath, "utf8");
   try {
     const parsed = JSON.parse(raw) as HouseholdStore;
+    if (!Array.isArray(parsed.quests)) {
+      parsed.quests = [];
+    }
     // Back-fill theme for profiles created before theming was added
     for (const child of parsed.children) {
       if (!isValidTheme(child.theme ?? "")) {
         (child as ChildProfile).theme = "default";
+      }
+      if (!child.jarSplitPreset) {
+        child.jarSplitPreset = "custom";
       }
     }
     return parsed;
