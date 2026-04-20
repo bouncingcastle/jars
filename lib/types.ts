@@ -2,6 +2,7 @@ export type JarKey = "spend" | "save" | "give" | "grow";
 export type ScheduleType = "weekly" | "fortnightly" | "monthly";
 export type EntryType = "scheduled_allowance" | "manual_allowance" | "allocation";
 export type ChildMode = "little" | "big";
+export type ThemeId = "default" | "peppa" | "ocean" | "sunshine";
 
 export interface ChildProfile {
   id: string;
@@ -16,6 +17,7 @@ export interface ChildProfile {
   schedule: ScheduleType;
   scheduleAnchor: string;
   jarTargets: Record<JarKey, number>;
+  theme: ThemeId;
   createdAt: string;
 }
 
