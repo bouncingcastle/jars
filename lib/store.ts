@@ -1,8 +1,9 @@
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { defaultStore } from "@/lib/default-store";
+import { getPresetTargets } from "@/lib/jar-splits";
 import { hashPin, verifyPin } from "@/lib/pin";
-import { ChildMode, ChildProfile, ChildSnapshot, HouseholdStore, JarKey, LedgerEntry, ScheduleType, ThemeId } from "@/lib/types";
+import { ChildMode, ChildProfile, ChildSnapshot, HouseholdStore, JarKey, JarSplitPreset, LedgerEntry, QuestType, ScheduleType, ThemeId } from "@/lib/types";
 import { isValidTheme } from "@/lib/themes";
 
 const storePath = path.join(process.cwd(), "data", "store.json");
