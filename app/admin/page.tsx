@@ -8,7 +8,7 @@ import { ParentLoginForm } from "@/components/parent-login-form";
 import { StatCard } from "@/components/stat-card";
 import { parentLogoutAction } from "@/app/actions";
 import { hasParentSession } from "@/lib/auth";
-import { getHouseholdSnapshot } from "@/lib/store";
+import { getChildQuests, getHouseholdSnapshot } from "@/lib/store";
 import { formatCurrency } from "@/lib/money";
 
 export default async function AdminPage() {
@@ -34,6 +34,14 @@ export default async function AdminPage() {
   }
 
   const household = await getHouseholdSnapshot();
+  const questMap = new Map(
+    await Promise.all(
+      household.children.map(async (child) => [
+        child.profile.id,
+        (await getChildQuests(child.profile.id)).filter((quest) => !quest.archived)
+      ] as const)
+    )
+  );
 
   return (
     <main className="screen-shell">
@@ -75,7 +83,12 @@ export default async function AdminPage() {
 
       <section className="admin-grid">
         {household.children.map((child) => (
-          <AdminChildCard child={child} currency={household.currency} key={child.profile.id} />
+          <AdminChildCard
+            child={child}
+            currency={household.currency}
+            quests={questMap.get(child.profile.id) ?? []}
+            key={child.profile.id}
+          />
         ))}
       </section>
     </main>

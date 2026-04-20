@@ -4,14 +4,17 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import {
   addManualAllowance,
+  archiveQuest,
   allocateFunds,
+  createQuest,
   deleteChild,
   getChildProfile,
   upsertChildProfile,
   verifyChildPin
 } from "@/lib/store";
+import { getPresetTargets, isValidSplitPreset, normalizeCustomTargets } from "@/lib/jar-splits";
 import { parseCurrencyInput } from "@/lib/money";
-import { ChildMode, ScheduleType } from "@/lib/types";
+import { ChildMode, QuestType, ScheduleType } from "@/lib/types";
 import { isValidTheme } from "@/lib/themes";
 import {
   clearChildSession,
@@ -43,6 +46,10 @@ async function requireParentSession(): Promise<string | null> {
   return null;
 }
 
+function isValidQuestType(value: string): value is QuestType {
+  return ["save_balance", "give_balance", "streak_weeks"].includes(value);
+}
+
 export async function saveChildProfileAction(_prev: ActionResult | null, formData: FormData): Promise<ActionResult> {
   const authError = await requireParentSession();
   if (authError) return { error: authError };
@@ -59,6 +66,18 @@ export async function saveChildProfileAction(_prev: ActionResult | null, formDat
   const id = String(formData.get("id") || "").trim();
   const rawTheme = String(formData.get("theme") || "default");
   const theme = isValidTheme(rawTheme) ? rawTheme : "default";
+  const rawSplitPreset = String(formData.get("splitPreset") || "classic");
+  const splitPreset = isValidSplitPreset(rawSplitPreset) ? rawSplitPreset : "classic";
+  const customTargets = normalizeCustomTargets(
+    {
+      spend: Number(formData.get("targetSpend") || 0),
+      save: Number(formData.get("targetSave") || 0),
+      give: Number(formData.get("targetGive") || 0),
+      grow: Number(formData.get("targetGrow") || 0)
+    },
+    investingEnabled
+  );
+  const jarTargets = splitPreset === "custom" ? customTargets : getPresetTargets(splitPreset, investingEnabled);
 
   if (!name) return { error: "Name is required." };
   if (pin && !/^\d{4,6}$/.test(pin)) return { error: "PIN must be 4 to 6 digits." };
@@ -66,6 +85,7 @@ export async function saveChildProfileAction(_prev: ActionResult | null, formDat
   if (!goalName) return { error: "Goal name is required." };
   if (goalAmountCents < 100) return { error: "Goal amount must be at least $1.00." };
   if (mode !== "little" && mode !== "big") return { error: "Invalid kid mode." };
+  if (!jarTargets) return { error: "Jar split must add up to 100%." };
 
   try {
     await upsertChildProfile({
@@ -79,7 +99,9 @@ export async function saveChildProfileAction(_prev: ActionResult | null, formDat
       mode,
       goalName,
       goalAmountCents,
-      theme
+      theme,
+      jarTargets,
+      jarSplitPreset: splitPreset
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to save profile. Please try again.";
@@ -87,6 +109,65 @@ export async function saveChildProfileAction(_prev: ActionResult | null, formDat
   }
 
   safeRevalidate(["/", "/admin", "/child"]);
+  return { success: true };
+}
+
+export async function createQuestAction(_prev: ActionResult | null, formData: FormData): Promise<ActionResult> {
+  const authError = await requireParentSession();
+  if (authError) return { error: authError };
+
+  const childId = String(formData.get("childId") || "").trim();
+  const title = String(formData.get("title") || "").trim();
+  const reward = String(formData.get("reward") || "").trim();
+  const type = String(formData.get("type") || "") as QuestType;
+  const rawTarget = String(formData.get("target") || "0");
+
+  if (!childId) return { error: "No child selected." };
+  if (!title) return { error: "Quest title is required." };
+  if (!reward) return { error: "Reward text is required." };
+  if (!isValidQuestType(type)) return { error: "Invalid quest type." };
+
+  const targetValue = type === "streak_weeks" ? Number(rawTarget) : parseCurrencyInput(rawTarget);
+  if (!Number.isFinite(targetValue) || targetValue <= 0) {
+    return { error: type === "streak_weeks" ? "Weeks target must be at least 1." : "Amount target must be greater than $0.00." };
+  }
+  if (type === "streak_weeks" && (!Number.isInteger(targetValue) || targetValue < 1)) {
+    return { error: "Weeks target must be a whole number." };
+  }
+
+  try {
+    await createQuest({
+      childId,
+      title,
+      type,
+      targetValue,
+      reward
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to create quest. Please try again.";
+    return { error: message };
+  }
+
+  safeRevalidate(["/admin", `/child/${childId}`]);
+  return { success: true };
+}
+
+export async function archiveQuestAction(_prev: ActionResult | null, formData: FormData): Promise<ActionResult> {
+  const authError = await requireParentSession();
+  if (authError) return { error: authError };
+
+  const questId = String(formData.get("questId") || "").trim();
+  const childId = String(formData.get("childId") || "").trim();
+  if (!questId) return { error: "No quest selected." };
+
+  try {
+    await archiveQuest(questId);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to archive quest. Please try again.";
+    return { error: message };
+  }
+
+  safeRevalidate(["/admin", childId ? `/child/${childId}` : "/child"]);
   return { success: true };
 }
 

@@ -1,3 +1,4 @@
+import { formatCurrency } from "@/lib/money";
 import { ChildMode, JarKey, LedgerEntry } from "@/lib/types";
 
 export interface Badge {
@@ -5,6 +6,21 @@ export interface Badge {
   label: string;
   emoji: string;
   earned: boolean;
+}
+
+export interface BadgeProgress {
+  percent: number;
+  detail: string;
+}
+
+export interface BadgeProgressStats {
+  spend: number;
+  save: number;
+  give: number;
+  grow: number;
+  total: number;
+  lifetime: number;
+  streak: number;
 }
 
 /**
@@ -130,4 +146,95 @@ export function computeBadges(
   ];
 
   return badges;
+}
+
+export function getBadgeProgress(badgeId: string, currency: string, stats: BadgeProgressStats): BadgeProgress {
+  const { spend, save, give, grow, total, lifetime, streak } = stats;
+
+  switch (badgeId) {
+    case "first-sort": {
+      const target = 100;
+      return {
+        percent: total > 0 ? 100 : 0,
+        detail: `${formatCurrency(Math.min(total, target), currency)} / ${formatCurrency(target, currency)}`,
+      };
+    }
+    case "kind-heart": {
+      const target = 100;
+      return {
+        percent: give > 0 ? 100 : 0,
+        detail: `${formatCurrency(Math.min(give, target), currency)} / ${formatCurrency(target, currency)} in Give`,
+      };
+    }
+    case "saver": {
+      if (spend <= 0) {
+        return {
+          percent: save > 0 ? 100 : 0,
+          detail: `${formatCurrency(save, currency)} saved`,
+        };
+      }
+      return {
+        percent: Math.max(0, Math.min((save / spend) * 100, 100)),
+        detail: `${formatCurrency(save, currency)} save vs ${formatCurrency(spend, currency)} spend`,
+      };
+    }
+    case "balanced": {
+      const filled = [spend, save, give].filter((v) => v > 0).length;
+      return { percent: (filled / 3) * 100, detail: `${filled} / 3 jars started` };
+    }
+    case "streak-3": {
+      return { percent: Math.min((streak / 3) * 100, 100), detail: `${Math.min(streak, 3)} / 3 weeks` };
+    }
+    case "streak-8": {
+      return { percent: Math.min((streak / 8) * 100, 100), detail: `${Math.min(streak, 8)} / 8 weeks` };
+    }
+    case "generous": {
+      const target = Math.max(Math.round(total * 0.15), 100);
+      return {
+        percent: target > 0 ? Math.min((give / target) * 100, 100) : 0,
+        detail: `${formatCurrency(give, currency)} / ${formatCurrency(target, currency)} in Give`,
+      };
+    }
+    case "future-first": {
+      const future = save + grow;
+      const target = Math.max(spend, 100);
+      return {
+        percent: Math.min((future / target) * 100, 100),
+        detail: `${formatCurrency(future, currency)} future jars vs ${formatCurrency(spend, currency)} spend`,
+      };
+    }
+    case "century": {
+      const target = 10000;
+      return {
+        percent: Math.min((lifetime / target) * 100, 100),
+        detail: `${formatCurrency(lifetime, currency)} / ${formatCurrency(target, currency)} sorted`,
+      };
+    }
+    case "grower": {
+      const target = 100;
+      return {
+        percent: grow > 0 ? 100 : 0,
+        detail: `${formatCurrency(Math.min(grow, target), currency)} / ${formatCurrency(target, currency)} in Grow`,
+      };
+    }
+    default:
+      return { percent: 0, detail: "Keep sorting to unlock" };
+  }
+}
+
+export function getClosestBadge(
+  badges: Badge[],
+  currency: string,
+  stats: BadgeProgressStats
+): { badge: Badge; progress: BadgeProgress } | null {
+  const candidates = badges.filter((badge) => !badge.earned);
+  if (candidates.length === 0) {
+    return null;
+  }
+  const withProgress = candidates.map((badge) => ({
+    badge,
+    progress: getBadgeProgress(badge.id, currency, stats)
+  }));
+  withProgress.sort((a, b) => b.progress.percent - a.progress.percent);
+  return withProgress[0] ?? null;
 }

@@ -950,6 +950,20 @@ button {
   .payday-mini-calendar {
     grid-template-columns: 1fr;
   }
+
+  .split-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .quest-admin-item {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .badge-callout__head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 
 /* --- iPad / Tablet (768–1024px) --- */
@@ -1412,6 +1426,159 @@ button {
   padding: 1.5rem 1rem;
   color: var(--muted);
   font-size: 0.92rem;
+}
+
+.split-fieldset {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 0.85rem;
+  display: grid;
+  gap: 0.75rem;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.split-fieldset legend {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--teal);
+  padding: 0 0.35rem;
+}
+
+.split-grid {
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.split-hint {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.quest-admin-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.quest-admin-item {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 0.65rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.quest-admin-item > div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.quest-admin-item small {
+  color: var(--muted);
+}
+
+.badge-callout {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.95rem 1rem;
+}
+
+.badge-callout__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.badge-callout__track {
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(0, 121, 107, 0.14);
+  overflow: hidden;
+}
+
+.badge-callout__track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--sun-deep), var(--sun));
+  transition: width 280ms ease;
+}
+
+.badge-callout p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.badge-callout--done {
+  background: linear-gradient(135deg, rgba(126, 200, 165, 0.25), rgba(255, 255, 255, 0.8));
+}
+
+.quest-tracker {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.quest-tracker__list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.quest-tracker__item {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 0.75rem;
+  display: grid;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.quest-tracker__item header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.quest-status {
+  font-size: 0.74rem;
+  border-radius: 999px;
+  padding: 0.15rem 0.55rem;
+  background: rgba(0, 121, 107, 0.1);
+  color: var(--teal);
+  font-weight: 700;
+}
+
+.quest-status--done {
+  background: rgba(126, 200, 165, 0.2);
+}
+
+.quest-tracker__bar {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(30, 41, 48, 0.1);
+}
+
+.quest-tracker__bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--teal), var(--mint));
+  transition: width 280ms ease;
+}
+
+.quest-tracker__item small,
+.quest-tracker__item p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
 }
 
 /* ================================================================

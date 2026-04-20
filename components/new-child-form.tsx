@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { saveChildProfileAction } from "@/app/actions";
 import type { ActionResult } from "@/app/actions";
+import { JAR_SPLIT_PRESETS } from "@/lib/jar-splits";
 export function NewChildForm() {
   const [state, action, pending] = useActionState<ActionResult | null, FormData>(saveChildProfileAction, null);
 
@@ -50,6 +51,16 @@ export function NewChildForm() {
       <label className="checkbox-row">
         <input name="investingEnabled" type="checkbox" />
         Enable the Grow jar
+      </label>
+      <label>
+        Jar split preset
+        <select name="splitPreset" defaultValue="classic">
+          {JAR_SPLIT_PRESETS.filter((preset) => preset.id !== "custom").map((preset) => (
+            <option key={preset.id} value={preset.id}>
+              {preset.label} - {preset.description}
+            </option>
+          ))}
+        </select>
       </label>
       <button className="primary-button" type="submit" disabled={pending}>
         {pending ? "Creating…" : "Create child"}

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { childLockAction } from "@/app/actions";
 import { AllocationBoard } from "@/components/allocation-board";
 import { ChildShell } from "@/components/child-shell";
+import { ClosestBadgeCallout } from "@/components/closest-badge-callout";
 import { ChildUnlockForm } from "@/components/child-unlock-form";
 import { FirstMission } from "@/components/first-mission";
 import { GoalStoryCard } from "@/components/goal-story-card";
@@ -9,6 +10,7 @@ import { HistoryChart } from "@/components/history-chart";
 import { JarAdventure } from "@/components/jar-adventure";
 import { JarOverview } from "@/components/jar-overview";
 import { LockScreen } from "@/components/lock-screen";
+import { QuestTracker } from "@/components/quest-tracker";
 import { RecentActivity } from "@/components/recent-activity";
 import { SortingStreak } from "@/components/sorting-streak";
 import { StatCard } from "@/components/stat-card";
@@ -115,7 +117,7 @@ export default async function ChildDetailPage({ params }: { params: Promise<{ id
     notFound();
   }
 
-  const { snapshot, household, entries } = payload;
+  const { snapshot, household, entries, activeQuests } = payload;
   const tone = getKidTone(snapshot.profile.mode);
   const goalBalance = snapshot.jarBalances.save;
 
@@ -154,6 +156,16 @@ export default async function ChildDetailPage({ params }: { params: Promise<{ id
           <StatCard label="This month" value={formatCurrency(snapshot.monthlyInflowCents, household.currency)} tone="mint" />
           <StatCard label="All-time sorted" value={formatCurrency(snapshot.lifetimeAllocatedCents, household.currency)} tone="coral" />
         </section>
+        <ClosestBadgeCallout
+          badges={badges}
+          currency={household.currency}
+          spend={snapshot.jarBalances.spend}
+          save={snapshot.jarBalances.save}
+          give={snapshot.jarBalances.give}
+          grow={snapshot.jarBalances.grow}
+          lifetimeAllocatedCents={snapshot.lifetimeAllocatedCents}
+          streak={streak}
+        />
         <JarOverview
           jars={jars}
           availableCents={snapshot.availableCents}
@@ -185,6 +197,13 @@ export default async function ChildDetailPage({ params }: { params: Promise<{ id
           investingEnabled={snapshot.profile.investingEnabled}
           badges={badges}
           streak={streak}
+        />
+        <QuestTracker
+          quests={activeQuests}
+          saveBalanceCents={snapshot.jarBalances.save}
+          giveBalanceCents={snapshot.jarBalances.give}
+          streak={streak}
+          currency={household.currency}
         />
         <SortingStreak streak={streak} mode={snapshot.profile.mode} />
         <HistoryChart

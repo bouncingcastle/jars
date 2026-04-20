@@ -14,8 +14,12 @@ A mobile-first homelab web app for teaching children the Barefoot Investor jars 
 - Goal-driven storytelling with Save jar goal progress cards
 - Configurable automatic pocket money schedules (weekly/fortnightly/monthly) and manual top-ups
 - Optional Grow jar per child (toggled by parent)
-- Suggested split auto-fill based on Barefoot-style percentage targets
+- Parent-configurable split presets and custom jar percentages per child
+- Suggested split auto-fill based on each child profile targets
+- Parent quest management (create/archive per-child quests)
+- Child quest tracker with live progress and reward callouts
 - 10-badge achievement system with streak, balance, and generosity milestones
+- Closest badge progress callout near top stats
 - Sorting streak tracker with consecutive-week fire emojis
 - Weekly rotating family money-chat conversation prompts
 - Bar chart history with inflow vs sorted legend
@@ -167,14 +171,6 @@ systemctl restart kids-jars
 - Track active production issues in `BUGS.md`.
 
 ## Backlog
-
-### Prioritized next
-
-- **Quest management** — parent can create/edit/archive quests and kids see live progress + rewards
-- **Closest badge callout** — show the nearest unlock with an at-a-glance progress ring/chip near top stats
-- **Configurable jar split percentages** — parent-managed per-child presets/custom split targets
-
-### Remaining backlog
 
 - **Dark mode** — respect `prefers-color-scheme` and add a toggle
 - **Offline PWA** — service worker with cache-first strategy for static assets

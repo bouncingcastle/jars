@@ -256,14 +256,15 @@ export async function upsertChildProfile(input: {
   goalName: string;
   goalAmountCents: number;
   theme?: ThemeId;
+  jarTargets?: Record<JarKey, number>;
+  jarSplitPreset?: JarSplitPreset;
 }) {
   const store = await readStore();
   const normalizedId = input.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
   const childId = input.id || makeUniqueChildId(store, normalizedId);
   const existing = store.children.find((child) => child.id === childId);
-  const jarTargets = input.investingEnabled
-    ? { spend: 40, save: 30, give: 10, grow: 20 }
-    : { spend: 60, save: 30, give: 10, grow: 0 };
+  const jarSplitPreset = input.jarSplitPreset ?? "classic";
+  const jarTargets = input.jarTargets ?? getPresetTargets(jarSplitPreset, input.investingEnabled);
 
   if (existing) {
     existing.name = input.name;
@@ -278,6 +279,7 @@ export async function upsertChildProfile(input: {
     existing.goalName = input.goalName;
     existing.goalAmountCents = input.goalAmountCents;
     existing.jarTargets = jarTargets;
+    existing.jarSplitPreset = jarSplitPreset;
     if (input.theme) existing.theme = input.theme;
   } else {
     if (!input.pin) {
@@ -295,6 +297,7 @@ export async function upsertChildProfile(input: {
       goalName: input.goalName,
       goalAmountCents: input.goalAmountCents,
       jarTargets,
+      jarSplitPreset,
       theme: input.theme ?? "default",
       createdAt: new Date().toISOString()
     });
@@ -328,6 +331,7 @@ export async function deleteChild(childId: string) {
   }
   store.children.splice(index, 1);
   store.ledger = store.ledger.filter((entry) => entry.childId !== childId);
+  store.quests = store.quests.filter((quest) => quest.childId !== childId);
   await writeStore(store);
 }
 
@@ -406,6 +410,50 @@ export async function getChildProfiles() {
   return store.children;
 }
 
+export async function createQuest(input: {
+  childId: string;
+  title: string;
+  type: QuestType;
+  targetValue: number;
+  reward: string;
+}) {
+  const store = await readStore();
+  const child = store.children.find((item) => item.id === input.childId);
+  if (!child) {
+    throw new Error("Child not found");
+  }
+
+  store.quests.push({
+    id: makeId("quest"),
+    childId: input.childId,
+    title: input.title,
+    type: input.type,
+    targetValue: input.targetValue,
+    reward: input.reward,
+    archived: false,
+    createdAt: new Date().toISOString()
+  });
+
+  await writeStore(store);
+}
+
+export async function archiveQuest(questId: string) {
+  const store = await readStore();
+  const quest = store.quests.find((item) => item.id === questId);
+  if (!quest) {
+    throw new Error("Quest not found");
+  }
+  quest.archived = true;
+  await writeStore(store);
+}
+
+export async function getChildQuests(childId: string) {
+  const store = await syncScheduledAllowances();
+  return store.quests
+    .filter((quest) => quest.childId === childId)
+    .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+}
+
 export async function getRecentEntries(childId: string) {
   const store = await syncScheduledAllowances();
   return store.ledger
@@ -440,10 +488,15 @@ export async function getChildPageData(childId: string) {
     .sort((left, right) => right.createdAt.localeCompare(left.createdAt))
     .slice(0, 12);
 
+  const activeQuests = store.quests
+    .filter((quest) => quest.childId === childId && !quest.archived)
+    .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+
   return {
     household,
     snapshot,
-    entries
+    entries,
+    activeQuests
   };
 }
 
