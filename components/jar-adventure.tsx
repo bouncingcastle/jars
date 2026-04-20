@@ -1,3 +1,6 @@
+"use client";
+
+import { useMemo, useState } from "react";
 import { formatCurrency } from "@/lib/money";
 import { JarVisual } from "@/components/jar-visual";
 import { Badge } from "@/lib/badges";
@@ -34,9 +37,20 @@ const badgeUnlockTips: Record<string, string> = {
 };
 
 export function JarAdventure({ currency, mode, totalAllocatedCents, targets, balances, investingEnabled, badges }: JarAdventureProps) {
+  const [activeBadgeId, setActiveBadgeId] = useState<string | null>(null);
   const visibleJars = (Object.keys(jarMeta) as JarKey[]).filter((jar) => investingEnabled || jar !== "grow");
   const earnedBadges = badges.filter((b) => b.earned);
   const unearnedBadges = badges.filter((b) => !b.earned);
+  const allBadges = useMemo(() => [...earnedBadges, ...unearnedBadges], [earnedBadges, unearnedBadges]);
+  const activeBadge = activeBadgeId ? allBadges.find((badge) => badge.id === activeBadgeId) ?? null : null;
+
+  function openBadgeSheet(badgeId: string) {
+    setActiveBadgeId(badgeId);
+  }
+
+  function closeBadgeSheet() {
+    setActiveBadgeId(null);
+  }
 
   return (
     <section className="panel panel--warm">
@@ -75,13 +89,19 @@ export function JarAdventure({ currency, mode, totalAllocatedCents, targets, bal
       <div className="badge-list">
         {earnedBadges.length > 0 ? (
           earnedBadges.map((badge) => (
-            <span
-              className="badge-pill badge-pill--new"
-              key={badge.id}
-              title={`Unlocked. ${badgeUnlockTips[badge.id] ?? "Keep sorting to earn more badges."}`}
-            >
-              {badge.emoji} {badge.label}
-            </span>
+            <div className="badge-pill-wrap" key={badge.id}>
+              <button
+                className="badge-pill badge-pill--new badge-pill-trigger"
+                type="button"
+                aria-describedby={`badge-tip-earned-${badge.id}`}
+                onClick={() => openBadgeSheet(badge.id)}
+              >
+                {badge.emoji} {badge.label}
+              </button>
+              <span className="badge-tooltip" id={`badge-tip-earned-${badge.id}`} role="tooltip">
+                Unlocked. {badgeUnlockTips[badge.id] ?? "Keep sorting to earn more badges."}
+              </span>
+            </div>
           ))
         ) : (
           <span className="badge-pill">
@@ -89,20 +109,47 @@ export function JarAdventure({ currency, mode, totalAllocatedCents, targets, bal
           </span>
         )}
       </div>
+      <p className="badge-help-text">Tap a badge to see how it is unlocked.</p>
 
       {unearnedBadges.length > 0 && earnedBadges.length > 0 && (
         <div className="badge-list badge-list--locked">
           {unearnedBadges.map((badge) => (
-            <span
-              className="badge-pill badge-pill--locked"
-              key={badge.id}
-              title={`How to unlock: ${badgeUnlockTips[badge.id] ?? "Keep sorting each week."}`}
-            >
-              {badge.emoji} {badge.label}
-            </span>
+            <div className="badge-pill-wrap" key={badge.id}>
+              <button
+                className="badge-pill badge-pill--locked badge-pill-trigger"
+                type="button"
+                aria-describedby={`badge-tip-locked-${badge.id}`}
+                onClick={() => openBadgeSheet(badge.id)}
+              >
+                {badge.emoji} {badge.label}
+              </button>
+              <span className="badge-tooltip" id={`badge-tip-locked-${badge.id}`} role="tooltip">
+                How to unlock: {badgeUnlockTips[badge.id] ?? "Keep sorting each week."}
+              </span>
+            </div>
           ))}
         </div>
       )}
+
+      {activeBadge ? (
+        <div className="badge-sheet" role="dialog" aria-modal="true" aria-label="Badge details">
+          <button className="badge-sheet__scrim" type="button" onClick={closeBadgeSheet} aria-label="Close badge details" />
+          <article className="badge-sheet__panel">
+            <header>
+              <strong>
+                {activeBadge.emoji} {activeBadge.label}
+              </strong>
+              <button className="secondary-button" type="button" onClick={closeBadgeSheet}>Close</button>
+            </header>
+            <p className="badge-sheet__status">
+              {activeBadge.earned ? "Unlocked!" : "Locked"}
+            </p>
+            <p className="badge-sheet__tip">
+              {badgeUnlockTips[activeBadge.id] ?? "Keep sorting each week to unlock more badges."}
+            </p>
+          </article>
+        </div>
+      ) : null}
     </section>
   );
 }
