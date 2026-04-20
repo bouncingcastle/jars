@@ -1,5 +1,5 @@
 import { formatCurrency } from "@/lib/money";
-import { ChildMode } from "@/lib/types";
+import { ChildMode, ScheduleType } from "@/lib/types";
 import { getKidTone } from "@/lib/kid-copy";
 
 interface HistoryChartProps {
@@ -10,19 +10,48 @@ interface HistoryChartProps {
   }>;
   currency: string;
   mode: ChildMode;
+  allowanceCents: number;
+  nextPaydayIso: string | null;
+  schedule: ScheduleType;
 }
 
-export function HistoryChart({ history, currency, mode }: HistoryChartProps) {
+function scheduleLabel(schedule: ScheduleType) {
+  if (schedule === "fortnightly") return "every 2 weeks";
+  if (schedule === "monthly") return "every month";
+  return "every week";
+}
+
+export function HistoryChart({ history, currency, mode, allowanceCents, nextPaydayIso, schedule }: HistoryChartProps) {
   const tone = getKidTone(mode);
   const maxValue = Math.max(...history.flatMap((entry) => [entry.inflowCents, entry.allocatedCents]), 1);
+  const nextDate = nextPaydayIso ? new Date(nextPaydayIso) : null;
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const daysUntilNext = nextDate ? Math.max(Math.ceil((nextDate.getTime() - now.getTime()) / 86400000), 0) : null;
 
   return (
     <section className="panel">
       <div className="section-heading">
         <div>
-          <span className="eyebrow">Progress</span>
+          <span className="eyebrow">Money story</span>
           <h2>{tone.chartTitle}</h2>
         </div>
+      </div>
+      <div className="payday-card">
+        {nextDate ? (
+          <>
+            <strong>🗓️ Next pocket money: {nextDate.toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" })}</strong>
+            <span>
+              +{formatCurrency(allowanceCents, currency)} {scheduleLabel(schedule)}
+              {daysUntilNext === 0 ? " · today" : ` · in ${daysUntilNext} day${daysUntilNext === 1 ? "" : "s"}`}
+            </span>
+          </>
+        ) : (
+          <>
+            <strong>🗓️ Next pocket money date unavailable</strong>
+            <span>Check your schedule start date in parent settings.</span>
+          </>
+        )}
       </div>
       <div className="history-chart">
         {history.map((entry) => (
@@ -45,9 +74,9 @@ export function HistoryChart({ history, currency, mode }: HistoryChartProps) {
       </div>
       <div className="history-chart__legend">
         <span className="history-chart__legend-dot history-chart__legend-dot--inflow" />
-        <span>Received</span>
+        <span>{mode === "little" ? "Coins in" : "Received"}</span>
         <span className="history-chart__legend-dot history-chart__legend-dot--allocated" />
-        <span>Sorted</span>
+        <span>{mode === "little" ? "Coins sorted" : "Sorted"}</span>
       </div>
     </section>
   );

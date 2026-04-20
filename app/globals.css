@@ -514,6 +514,7 @@ button {
   color: var(--teal);
   font-size: 0.84rem;
   font-weight: 700;
+  cursor: help;
 }
 
 .badge-pill--locked {
@@ -617,6 +618,26 @@ button {
   padding-top: 1rem;
 }
 
+.payday-card {
+  margin-top: 0.8rem;
+  border: 1px dashed rgba(0, 121, 107, 0.35);
+  background: rgba(0, 121, 107, 0.08);
+  border-radius: 16px;
+  padding: 0.7rem 0.85rem;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.payday-card strong {
+  color: var(--ink);
+  font-size: 0.95rem;
+}
+
+.payday-card span {
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
 .history-chart__month {
   display: grid;
   gap: 0.5rem;
@@ -675,6 +696,9 @@ button {
 }
 
 .activity-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
   padding: 0.85rem 0;
   border-top: 1px solid var(--line);
 }
@@ -684,14 +708,32 @@ button {
   padding-top: 0;
 }
 
-.activity-item div {
+.activity-item__lead {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+}
+
+.activity-item__lead div {
   display: grid;
   gap: 0.2rem;
+}
+
+.activity-item__emoji {
+  font-size: 1.15rem;
+  line-height: 1;
+  margin-top: 0.1rem;
 }
 
 .activity-item span {
   color: var(--muted);
   font-size: 0.9rem;
+}
+
+.activity-item--incoming {
+  background: linear-gradient(90deg, rgba(244, 185, 66, 0.14), rgba(244, 185, 66, 0));
+  border-radius: 14px;
+  padding: 0.85rem 0.7rem;
 }
 
 @media (max-width: 720px) {

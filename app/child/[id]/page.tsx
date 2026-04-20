@@ -18,6 +18,7 @@ import { computeBadges, computeStreak } from "@/lib/badges";
 import { hasChildSession, hasParentSession } from "@/lib/auth";
 import { formatCurrency } from "@/lib/money";
 import { getChildPageData, getChildProfile, getJarList } from "@/lib/store";
+import { ScheduleType } from "@/lib/types";
 
 function getJarCopy(mode: "little" | "big") {
   if (mode === "little") {
@@ -35,6 +36,37 @@ function getJarCopy(mode: "little" | "big") {
     give: { label: "Give", hint: "For generosity" },
     grow: { label: "Grow", hint: "For long-term growth" }
   };
+}
+
+function addScheduleStep(date: Date, schedule: ScheduleType) {
+  const next = new Date(date);
+  if (schedule === "weekly") {
+    next.setDate(next.getDate() + 7);
+    return next;
+  }
+  if (schedule === "fortnightly") {
+    next.setDate(next.getDate() + 14);
+    return next;
+  }
+  next.setMonth(next.getMonth() + 1);
+  return next;
+}
+
+function getNextPocketMoneyIso(anchor: string, schedule: ScheduleType) {
+  let cursor = new Date(anchor);
+  if (Number.isNaN(cursor.getTime())) {
+    return null;
+  }
+
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  cursor.setHours(0, 0, 0, 0);
+
+  while (cursor <= now) {
+    cursor = addScheduleStep(cursor, schedule);
+  }
+
+  return cursor.toISOString();
 }
 
 export default async function ChildDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -97,6 +129,7 @@ export default async function ChildDetailPage({ params }: { params: Promise<{ id
     hint: jarCopy[key].hint,
     currentBalance: snapshot.jarBalances[key]
   }));
+  const nextPaydayIso = getNextPocketMoneyIso(snapshot.profile.scheduleAnchor, snapshot.profile.schedule);
 
   return (
     <main className={`kid-page kid-mode-${snapshot.profile.mode}`}>
@@ -146,7 +179,14 @@ export default async function ChildDetailPage({ params }: { params: Promise<{ id
           badges={badges}
         />
         <SortingStreak streak={streak} mode={snapshot.profile.mode} />
-        <HistoryChart history={snapshot.history} currency={household.currency} mode={snapshot.profile.mode} />
+        <HistoryChart
+          history={snapshot.history}
+          currency={household.currency}
+          mode={snapshot.profile.mode}
+          allowanceCents={snapshot.profile.allowanceCents}
+          nextPaydayIso={nextPaydayIso}
+          schedule={snapshot.profile.schedule}
+        />
         <RecentActivity entries={entries} currency={household.currency} mode={snapshot.profile.mode} />
       </ChildShell>
     </main>

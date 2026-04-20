@@ -20,6 +20,19 @@ const jarMeta: Record<JarKey, { label: string; color: string }> = {
   grow: { label: "Grow", color: "#00796b" }
 };
 
+const badgeUnlockTips: Record<string, string> = {
+  "first-sort": "Sort any amount into a jar.",
+  "kind-heart": "Put any coins into Give.",
+  "saver": "Have Save at least as high as Spend.",
+  "balanced": "Have coins in Spend, Save, and Give.",
+  "streak-3": "Sort coins in 3 weeks in a row.",
+  "streak-8": "Sort coins in 8 weeks in a row.",
+  generous: "Keep Give at 15% or more of your total jars.",
+  "future-first": "Keep Save + Grow at least as high as Spend.",
+  century: "Sort $100 total across all time.",
+  grower: "Put any coins into Grow.",
+};
+
 export function JarAdventure({ currency, mode, totalAllocatedCents, targets, balances, investingEnabled, badges }: JarAdventureProps) {
   const visibleJars = (Object.keys(jarMeta) as JarKey[]).filter((jar) => investingEnabled || jar !== "grow");
   const earnedBadges = badges.filter((b) => b.earned);
@@ -62,7 +75,11 @@ export function JarAdventure({ currency, mode, totalAllocatedCents, targets, bal
       <div className="badge-list">
         {earnedBadges.length > 0 ? (
           earnedBadges.map((badge) => (
-            <span className="badge-pill badge-pill--new" key={badge.id}>
+            <span
+              className="badge-pill badge-pill--new"
+              key={badge.id}
+              title={`Unlocked. ${badgeUnlockTips[badge.id] ?? "Keep sorting to earn more badges."}`}
+            >
               {badge.emoji} {badge.label}
             </span>
           ))
@@ -76,7 +93,11 @@ export function JarAdventure({ currency, mode, totalAllocatedCents, targets, bal
       {unearnedBadges.length > 0 && earnedBadges.length > 0 && (
         <div className="badge-list badge-list--locked">
           {unearnedBadges.map((badge) => (
-            <span className="badge-pill badge-pill--locked" key={badge.id}>
+            <span
+              className="badge-pill badge-pill--locked"
+              key={badge.id}
+              title={`How to unlock: ${badgeUnlockTips[badge.id] ?? "Keep sorting each week."}`}
+            >
               {badge.emoji} {badge.label}
             </span>
           ))}
