@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState, type DragEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import { useFormStatus } from "react-dom";
 import { allocateFundsAction } from "@/app/actions";
 import { getKidTone } from "@/lib/kid-copy";
@@ -101,6 +101,9 @@ export function AllocationBoard({
   const [rewardSummary, setRewardSummary] = useState<RewardSummary | null>(null);
   const [flyingCoins, setFlyingCoins] = useState<FlyingCoin[]>([]);
   const [jarImpacts, setJarImpacts] = useState<JarImpact[]>([]);
+  const touchDragCoinRef = useRef<number | null>(null);
+  const [touchDragCoin, setTouchDragCoin] = useState<number | null>(null);
+  const [touchGhostPos, setTouchGhostPos] = useState<{ x: number; y: number } | null>(null);
 
   const step = getStep(mode);
 
@@ -127,9 +130,32 @@ export function AllocationBoard({
     [draftTotal, availableCents]
   );
 
+  const nudgeRef = useRef(nudge);
+  nudgeRef.current = nudge;
+
   const coinTray = mode === "little"
     ? [100, 200, 500].filter((value) => value <= Math.max(availableCents, 100))
     : [];
+
+  function triggerCoinAnimation(coinValue: number, startX: number, startY: number, jarKey: JarKey, jarRect: DOMRect) {
+    const targetX = jarRect.left + jarRect.width * 0.5;
+    const targetY = jarRect.top + jarRect.height * 0.4;
+    const coin: FlyingCoin = {
+      id: crypto.randomUUID(),
+      label: formatCurrency(coinValue, currency),
+      startX,
+      startY,
+      dx: targetX - startX,
+      dy: targetY - startY
+    };
+    setFlyingCoins((prev) => [...prev, coin]);
+    setTimeout(() => {
+      const impact: JarImpact = { id: crypto.randomUUID(), x: targetX, y: targetY, jar: jarKey };
+      setJarImpacts((prev) => [...prev, impact]);
+      setTimeout(() => setJarImpacts((prev) => prev.filter((item) => item.id !== impact.id)), 420);
+    }, 520);
+    setTimeout(() => setFlyingCoins((prev) => prev.filter((item) => item.id !== coin.id)), 650);
+  }
 
   function handleCoinDragStart(event: DragEvent<HTMLButtonElement>, coinValue: number) {
     event.dataTransfer.setData("text/plain", String(coinValue));
@@ -141,43 +167,20 @@ export function AllocationBoard({
     setDropTargetJar(null);
     const raw = event.dataTransfer.getData("text/plain");
     const coinValue = Number(raw);
-    if (!Number.isFinite(coinValue) || coinValue <= 0) {
-      return;
-    }
-
+    if (!Number.isFinite(coinValue) || coinValue <= 0) return;
     const jarRect = event.currentTarget.getBoundingClientRect();
     const startX = Number.isFinite(event.clientX) ? event.clientX : jarRect.left + jarRect.width * 0.5;
     const startY = Number.isFinite(event.clientY) ? event.clientY : jarRect.top + jarRect.height * 0.5;
-    const targetX = jarRect.left + jarRect.width * 0.5;
-    const targetY = jarRect.top + jarRect.height * 0.4;
-
-    const coin: FlyingCoin = {
-      id: crypto.randomUUID(),
-      label: formatCurrency(coinValue, currency),
-      startX,
-      startY,
-      dx: targetX - startX,
-      dy: targetY - startY
-    };
-
-    setFlyingCoins((prev) => [...prev, coin]);
-    setTimeout(() => {
-      const impact: JarImpact = {
-        id: crypto.randomUUID(),
-        x: targetX,
-        y: targetY,
-        jar
-      };
-      setJarImpacts((prev) => [...prev, impact]);
-      setTimeout(() => {
-        setJarImpacts((prev) => prev.filter((item) => item.id !== impact.id));
-      }, 420);
-    }, 520);
-    setTimeout(() => {
-      setFlyingCoins((prev) => prev.filter((item) => item.id !== coin.id));
-    }, 650);
-
+    triggerCoinAnimation(coinValue, startX, startY, jar, jarRect);
     nudge(jar, coinValue);
+  }
+
+  function handleCoinTouchStart(e: React.TouchEvent<HTMLButtonElement>, coinValue: number) {
+    e.preventDefault();
+    touchDragCoinRef.current = coinValue;
+    setTouchDragCoin(coinValue);
+    const touch = e.touches[0];
+    setTouchGhostPos({ x: touch.clientX, y: touch.clientY });
   }
 
   function buildSuggestedSplit() {
@@ -338,8 +341,54 @@ export function AllocationBoard({
     setMagicSorting(false);
   }
 
+  useEffect(() => {
+    if (touchDragCoin === null) return;
+
+    function onTouchMove(e: TouchEvent) {
+      e.preventDefault();
+      const touch = e.touches[0];
+      setTouchGhostPos({ x: touch.clientX, y: touch.clientY });
+      const el = document.elementFromPoint(touch.clientX, touch.clientY);
+      const jarEl = el?.closest("[data-jar-key]") as HTMLElement | null;
+      setDropTargetJar(jarEl ? (jarEl.dataset.jarKey as JarKey) : null);
+    }
+
+    function onTouchEnd(e: TouchEvent) {
+      const coinValue = touchDragCoinRef.current;
+      touchDragCoinRef.current = null;
+      setTouchDragCoin(null);
+      setTouchGhostPos(null);
+      setDropTargetJar(null);
+      if (coinValue == null) return;
+      const touch = e.changedTouches[0];
+      const el = document.elementFromPoint(touch.clientX, touch.clientY);
+      const jarEl = el?.closest("[data-jar-key]") as HTMLElement | null;
+      if (!jarEl) return;
+      const jarKey = jarEl.dataset.jarKey as JarKey;
+      const jarRect = jarEl.getBoundingClientRect();
+      triggerCoinAnimation(coinValue, touch.clientX, touch.clientY, jarKey, jarRect);
+      nudgeRef.current(jarKey, coinValue);
+    }
+
+    document.addEventListener("touchmove", onTouchMove, { passive: false });
+    document.addEventListener("touchend", onTouchEnd);
+    return () => {
+      document.removeEventListener("touchmove", onTouchMove);
+      document.removeEventListener("touchend", onTouchEnd);
+    };
+  }, [touchDragCoin]);
+
   return (
     <section className="panel panel--warm" id={sectionId}>
+      {touchGhostPos != null && touchDragCoin != null ? (
+        <div
+          className="touch-drag-ghost"
+          aria-hidden="true"
+          style={{ left: `${touchGhostPos.x}px`, top: `${touchGhostPos.y}px` } as React.CSSProperties}
+        >
+          {formatCurrency(touchDragCoin, currency)}
+        </div>
+      ) : null}
       {flyingCoins.length > 0 ? (
         <div className="flying-coins-layer" aria-hidden="true">
           {flyingCoins.map((coin) => (
@@ -417,6 +466,7 @@ export function AllocationBoard({
                 className="coin-token"
                 draggable
                 onDragStart={(event) => handleCoinDragStart(event, coin)}
+                onTouchStart={(event) => handleCoinTouchStart(event, coin)}
                 onClick={() => setFeedback("Drag a coin onto a jar, or tap Magic Sort.")}
                 type="button"
                 aria-label={`Coin ${formatCurrency(coin, currency)}`}
@@ -441,6 +491,7 @@ export function AllocationBoard({
             return (
               <div
                 className={`jar-input${mode === "little" ? " jar-input--little" : ""}${dropTargetJar === jar.key ? " jar-input--drop" : ""}`}
+                data-jar-key={jar.key}
                 key={jar.key}
                 onDragOver={(event) => event.preventDefault()}
                 onDragEnter={() => setDropTargetJar(jar.key)}

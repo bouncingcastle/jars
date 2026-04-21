@@ -639,6 +639,22 @@ button {
   cursor: grabbing;
 }
 
+.touch-drag-ghost {
+  position: fixed;
+  z-index: 90;
+  pointer-events: none;
+  transform: translate(-50%, -120%);
+  border-radius: 999px;
+  padding: 0.55rem 0.85rem;
+  background: linear-gradient(135deg, #ffd54f, #f4b942);
+  color: #4a3a0f;
+  font-weight: 900;
+  font-size: 0.95rem;
+  box-shadow: 0 8px 24px rgba(244, 185, 66, 0.45);
+  opacity: 0.92;
+  scale: 1.15;
+}
+
 .flying-coins-layer {
   position: fixed;
   inset: 0;
