@@ -11,6 +11,7 @@ import { HistoryChart } from "@/components/history-chart";
 import { JarAdventure } from "@/components/jar-adventure";
 import { JarOverview } from "@/components/jar-overview";
 import { LockScreen } from "@/components/lock-screen";
+import { LittleGoalCard } from "@/components/little-goal-card";
 import { QuestTracker } from "@/components/quest-tracker";
 import { RecentActivity } from "@/components/recent-activity";
 import { SortingStreak } from "@/components/sorting-streak";
@@ -194,6 +195,12 @@ export default async function ChildDetailPage({ params }: { params: Promise<{ id
               availableCents={snapshot.availableCents}
               currency={household.currency}
               investingEnabled={snapshot.profile.investingEnabled}
+            />
+            <LittleGoalCard
+              goalName={snapshot.profile.goalName}
+              currentCents={goalBalance}
+              goalAmountCents={snapshot.profile.goalAmountCents}
+              currency={household.currency}
             />
             <AllocationBoard
               sectionId="allocation-board"

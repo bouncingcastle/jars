@@ -604,6 +604,136 @@ button {
   gap: 0.2rem;
 }
 
+.coin-tray {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 0.2rem;
+}
+
+.coin-tray p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.coin-tray__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.coin-token {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.55rem 0.85rem;
+  background: linear-gradient(135deg, #ffd54f, #f4b942);
+  color: #4a3a0f;
+  font-weight: 900;
+  font-size: 0.95rem;
+  cursor: grab;
+  box-shadow: 0 6px 16px rgba(244, 185, 66, 0.28);
+}
+
+.coin-token:active {
+  cursor: grabbing;
+}
+
+.flying-coins-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  pointer-events: none;
+}
+
+.jar-impacts-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 81;
+  pointer-events: none;
+}
+
+.flying-coin {
+  position: fixed;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  padding: 0.22rem 0.45rem;
+  background: linear-gradient(135deg, #ffd54f, #f4b942);
+  color: #4a3a0f;
+  font-size: 0.75rem;
+  font-weight: 900;
+  box-shadow: 0 8px 18px rgba(244, 185, 66, 0.35);
+  animation: coin-fly-into-jar 620ms ease-out forwards;
+}
+
+.jar-impact-spark {
+  position: fixed;
+  width: 14px;
+  height: 14px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.95) 0%, rgba(255, 213, 79, 0.82) 45%, rgba(255, 213, 79, 0) 100%);
+  animation: jar-impact-spark 380ms ease-out forwards;
+}
+
+.jar-impact-spark--spend {
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.95) 0%, rgba(236, 107, 59, 0.82) 45%, rgba(236, 107, 59, 0) 100%);
+}
+
+.jar-impact-spark--save {
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.95) 0%, rgba(244, 185, 66, 0.82) 45%, rgba(244, 185, 66, 0) 100%);
+}
+
+.jar-impact-spark--give {
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.95) 0%, rgba(239, 143, 122, 0.82) 45%, rgba(239, 143, 122, 0) 100%);
+}
+
+.jar-impact-spark--grow {
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.95) 0%, rgba(0, 121, 107, 0.82) 45%, rgba(0, 121, 107, 0) 100%);
+}
+
+.jar-input--drop {
+  outline: 3px solid rgba(0, 121, 107, 0.3);
+  outline-offset: 2px;
+}
+
+.jar-input--little .jar-input__label {
+  font-size: 1.2rem;
+}
+
+.jar-input--little .jar-input__balance {
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.little-goal-card {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.little-goal-card__bar {
+  width: 100%;
+  height: 12px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(30, 41, 48, 0.12);
+}
+
+.little-goal-card__bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(135deg, var(--sun-deep), var(--sun));
+  transition: width 320ms ease;
+}
+
+.little-goal-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
 @keyframes ribbon-pop {
   0% {
     opacity: 0;
@@ -616,6 +746,36 @@ button {
   100% {
     opacity: 0.96;
     transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+@keyframes coin-fly-into-jar {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  70% {
+    opacity: 1;
+    transform: translate(calc(-50% + var(--coin-dx)), calc(-50% + var(--coin-dy))) scale(1.05);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--coin-dx)), calc(-50% + var(--coin-dy))) scale(0.55);
+  }
+}
+
+@keyframes jar-impact-spark {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.4);
+  }
+  40% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.3);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(2.2);
   }
 }
 
@@ -960,6 +1120,11 @@ button {
 .kid-mode-little .jar-input {
   border-width: 2px;
   padding: 1.1rem;
+}
+
+.kid-mode-little .jar-visual__label {
+  font-size: 0.95rem;
+  font-weight: 800;
 }
 
 .kid-mode-little .coin-stepper__btn {

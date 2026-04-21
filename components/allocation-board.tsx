@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, type DragEvent } from "react";
 import { useFormStatus } from "react-dom";
 import { allocateFundsAction } from "@/app/actions";
 import { getKidTone } from "@/lib/kid-copy";
@@ -60,6 +60,22 @@ interface RewardSummary {
   questSummaries: string[];
 }
 
+interface FlyingCoin {
+  id: string;
+  label: string;
+  startX: number;
+  startY: number;
+  dx: number;
+  dy: number;
+}
+
+interface JarImpact {
+  id: string;
+  x: number;
+  y: number;
+  jar: JarKey;
+}
+
 export function AllocationBoard({
   sectionId,
   childId,
@@ -81,7 +97,10 @@ export function AllocationBoard({
   const [celebrating, setCelebrating] = useState(false);
   const [magicSorting, setMagicSorting] = useState(false);
   const [bouncingJar, setBouncingJar] = useState<JarKey | null>(null);
+  const [dropTargetJar, setDropTargetJar] = useState<JarKey | null>(null);
   const [rewardSummary, setRewardSummary] = useState<RewardSummary | null>(null);
+  const [flyingCoins, setFlyingCoins] = useState<FlyingCoin[]>([]);
+  const [jarImpacts, setJarImpacts] = useState<JarImpact[]>([]);
 
   const step = getStep(mode);
 
@@ -107,6 +126,59 @@ export function AllocationBoard({
     },
     [draftTotal, availableCents]
   );
+
+  const coinTray = mode === "little"
+    ? [100, 200, 500].filter((value) => value <= Math.max(availableCents, 100))
+    : [];
+
+  function handleCoinDragStart(event: DragEvent<HTMLButtonElement>, coinValue: number) {
+    event.dataTransfer.setData("text/plain", String(coinValue));
+    event.dataTransfer.effectAllowed = "copy";
+  }
+
+  function handleJarDrop(event: DragEvent<HTMLDivElement>, jar: JarKey) {
+    event.preventDefault();
+    setDropTargetJar(null);
+    const raw = event.dataTransfer.getData("text/plain");
+    const coinValue = Number(raw);
+    if (!Number.isFinite(coinValue) || coinValue <= 0) {
+      return;
+    }
+
+    const jarRect = event.currentTarget.getBoundingClientRect();
+    const startX = Number.isFinite(event.clientX) ? event.clientX : jarRect.left + jarRect.width * 0.5;
+    const startY = Number.isFinite(event.clientY) ? event.clientY : jarRect.top + jarRect.height * 0.5;
+    const targetX = jarRect.left + jarRect.width * 0.5;
+    const targetY = jarRect.top + jarRect.height * 0.4;
+
+    const coin: FlyingCoin = {
+      id: crypto.randomUUID(),
+      label: formatCurrency(coinValue, currency),
+      startX,
+      startY,
+      dx: targetX - startX,
+      dy: targetY - startY
+    };
+
+    setFlyingCoins((prev) => [...prev, coin]);
+    setTimeout(() => {
+      const impact: JarImpact = {
+        id: crypto.randomUUID(),
+        x: targetX,
+        y: targetY,
+        jar
+      };
+      setJarImpacts((prev) => [...prev, impact]);
+      setTimeout(() => {
+        setJarImpacts((prev) => prev.filter((item) => item.id !== impact.id));
+      }, 420);
+    }, 520);
+    setTimeout(() => {
+      setFlyingCoins((prev) => prev.filter((item) => item.id !== coin.id));
+    }, 650);
+
+    nudge(jar, coinValue);
+  }
 
   function buildSuggestedSplit() {
     const next: Record<JarKey, number> = { ...zeroDraft };
@@ -268,6 +340,38 @@ export function AllocationBoard({
 
   return (
     <section className="panel panel--warm" id={sectionId}>
+      {flyingCoins.length > 0 ? (
+        <div className="flying-coins-layer" aria-hidden="true">
+          {flyingCoins.map((coin) => (
+            <span
+              key={coin.id}
+              className="flying-coin"
+              style={{
+                left: `${coin.startX}px`,
+                top: `${coin.startY}px`,
+                "--coin-dx": `${coin.dx}px`,
+                "--coin-dy": `${coin.dy}px`
+              } as React.CSSProperties}
+            >
+              {coin.label}
+            </span>
+          ))}
+        </div>
+      ) : null}
+      {jarImpacts.length > 0 ? (
+        <div className="jar-impacts-layer" aria-hidden="true">
+          {jarImpacts.map((impact) => (
+            <span
+              key={impact.id}
+              className={`jar-impact-spark jar-impact-spark--${impact.jar}`}
+              style={{
+                left: `${impact.x}px`,
+                top: `${impact.y}px`
+              } as React.CSSProperties}
+            />
+          ))}
+        </div>
+      ) : null}
       {celebrating ? (
         <div className="coin-drop-burst" aria-hidden="true">
           <span /><span /><span /><span />
@@ -291,15 +395,38 @@ export function AllocationBoard({
       ) : (
       <>
       <div className="allocation-actions-row">
-        <button className="secondary-button" onClick={applySuggestedSplit} type="button">
-          {tone.autoFill}
-        </button>
+        {mode !== "little" ? (
+          <button className="secondary-button" onClick={applySuggestedSplit} type="button">
+            {tone.autoFill}
+          </button>
+        ) : null}
         {mode === "little" ? (
           <button className="primary-button magic-sort-button" onClick={handleMagicSort} type="button" disabled={magicSorting}>
             {magicSorting ? "Magic sorting..." : "✨ Magic Sort"}
           </button>
         ) : null}
       </div>
+
+      {mode === "little" ? (
+        <section className="coin-tray" aria-label="Drag coins into jars">
+          <p>Drag coins into the jars:</p>
+          <div className="coin-tray__row">
+            {coinTray.map((coin) => (
+              <button
+                key={coin}
+                className="coin-token"
+                draggable
+                onDragStart={(event) => handleCoinDragStart(event, coin)}
+                onClick={() => setFeedback("Drag a coin onto a jar, or tap Magic Sort.")}
+                type="button"
+                aria-label={`Coin ${formatCurrency(coin, currency)}`}
+              >
+                {formatCurrency(coin, currency)}
+              </button>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <form action={handleSubmit} className="allocation-form">
         <input name="childId" type="hidden" value={childId} />
@@ -312,15 +439,22 @@ export function AllocationBoard({
             const fillPercent = (totalInJar / visualMax) * 100;
 
             return (
-              <div className="jar-input" key={jar.key}>
+              <div
+                className={`jar-input${mode === "little" ? " jar-input--little" : ""}${dropTargetJar === jar.key ? " jar-input--drop" : ""}`}
+                key={jar.key}
+                onDragOver={(event) => event.preventDefault()}
+                onDragEnter={() => setDropTargetJar(jar.key)}
+                onDragLeave={() => setDropTargetJar((current) => (current === jar.key ? null : current))}
+                onDrop={(event) => handleJarDrop(event, jar.key)}
+              >
                 <input type="hidden" name={jar.key} value={(cents / 100).toFixed(2)} />
                 <div className="jar-input__header">
-                  <JarVisual jarKey={jar.key} fillPercent={fillPercent} size={80} bouncing={bouncingJar === jar.key} />
+                  <JarVisual jarKey={jar.key} fillPercent={fillPercent} size={mode === "little" ? 120 : 80} bouncing={bouncingJar === jar.key} />
                   <span className="jar-input__label">{jar.label}</span>
-                  <small>{jar.hint}</small>
+                  <small>{mode === "little" ? "Drop coins here" : jar.hint}</small>
                 </div>
                 <span className="jar-input__balance">
-                  {formatCurrency(jar.currentBalance, currency)} now
+                  {mode === "little" ? `${formatCurrency(jar.currentBalance, currency)} in jar` : `${formatCurrency(jar.currentBalance, currency)} now`}
                 </span>
                 <div className="coin-stepper">
                   <button
