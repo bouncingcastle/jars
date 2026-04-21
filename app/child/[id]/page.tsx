@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { childLockAction } from "@/app/actions";
 import { AllocationBoard } from "@/components/allocation-board";
 import { ChildMissionStrip } from "@/components/child-mission-strip";
+import { ClosestBadgeCallout } from "@/components/closest-badge-callout";
 import { ChildShell } from "@/components/child-shell";
 import { ChildUnlockForm } from "@/components/child-unlock-form";
 import { FirstMission } from "@/components/first-mission";
