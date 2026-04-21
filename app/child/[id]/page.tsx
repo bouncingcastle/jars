@@ -127,6 +127,7 @@ export default async function ChildDetailPage({ params }: { params: Promise<{ id
 
   const { snapshot, household, entries, activeQuests } = payload;
   const tone = getKidTone(snapshot.profile.mode);
+  const isLittleMode = snapshot.profile.mode === "little";
   const goalBalance = snapshot.jarBalances.save;
 
   // Compute streak and badges from full ledger
@@ -170,79 +171,133 @@ export default async function ChildDetailPage({ params }: { params: Promise<{ id
           </form>
         }
       >
-        <section className="stats-grid">
-          <StatCard label={tone.leftoverLabel} value={formatCurrency(snapshot.availableCents, household.currency)} tone="sun" />
-          <StatCard label="This month" value={formatCurrency(snapshot.monthlyInflowCents, household.currency)} tone="mint" />
-          <StatCard label="All-time sorted" value={formatCurrency(snapshot.lifetimeAllocatedCents, household.currency)} tone="coral" />
-        </section>
-        <ChildMissionStrip
-          mode={snapshot.profile.mode}
-          availableCents={snapshot.availableCents}
-          currency={household.currency}
-          nearestBadge={nearestBadge ? {
-            badge: nearestBadge.badge,
-            percent: nearestBadge.progress.percent,
-            detail: nearestBadge.progress.detail
-          } : null}
-          nextPaydayIso={nextPaydayIso}
-        />
-        <JarOverview
-          jars={jars}
-          availableCents={snapshot.availableCents}
-          currency={household.currency}
-          investingEnabled={snapshot.profile.investingEnabled}
-        />
-        <FirstMission mode={snapshot.profile.mode} hasStarted={snapshot.lifetimeAllocatedCents > 0} />
-        <GoalStoryCard
-          mode={snapshot.profile.mode}
-          goalName={snapshot.profile.goalName}
-          goalAmountCents={snapshot.profile.goalAmountCents}
-          currentCents={goalBalance}
-          currency={household.currency}
-        />
-        <AllocationBoard
-          sectionId="allocation-board"
-          childId={snapshot.profile.id}
-          availableCents={snapshot.availableCents}
-          currency={household.currency}
-          mode={snapshot.profile.mode}
-          streak={streak}
-          sortedThisWeek={sortedThisWeek}
-          activeQuests={activeQuests}
-          currentBalances={snapshot.jarBalances}
-          totalAllocatedCents={snapshot.lifetimeAllocatedCents}
-          currentBadges={badges}
-          jars={jars}
-          targets={snapshot.profile.jarTargets}
-        />
-        <JarAdventure
-          currency={household.currency}
-          mode={snapshot.profile.mode}
-          totalAllocatedCents={snapshot.lifetimeAllocatedCents}
-          targets={snapshot.profile.jarTargets}
-          balances={snapshot.jarBalances}
-          investingEnabled={snapshot.profile.investingEnabled}
-          badges={badges}
-          streak={streak}
-        />
-        <QuestTracker
-          quests={activeQuests}
-          saveBalanceCents={snapshot.jarBalances.save}
-          giveBalanceCents={snapshot.jarBalances.give}
-          streak={streak}
-          currency={household.currency}
-        />
-        <SortingStreak streak={streak} mode={snapshot.profile.mode} />
-        <HistoryChart
-          history={snapshot.history}
-          currency={household.currency}
-          mode={snapshot.profile.mode}
-          allowanceCents={snapshot.profile.allowanceCents}
-          nextPaydayIso={nextPaydayIso}
-          nextThreePaydays={upcomingPaydays}
-          schedule={snapshot.profile.schedule}
-        />
-        <RecentActivity entries={entries} currency={household.currency} mode={snapshot.profile.mode} />
+        {isLittleMode ? (
+          <>
+            <section className="stats-grid stats-grid--little-focus">
+              <StatCard label={tone.leftoverLabel} value={formatCurrency(snapshot.availableCents, household.currency)} tone="sun" />
+              <StatCard label="Streak" value={`${streak} ${streak === 1 ? "week" : "weeks"}`} tone="mint" />
+            </section>
+            <ChildMissionStrip
+              mode={snapshot.profile.mode}
+              availableCents={snapshot.availableCents}
+              currency={household.currency}
+              nearestBadge={nearestBadge ? {
+                badge: nearestBadge.badge,
+                percent: nearestBadge.progress.percent,
+                detail: nearestBadge.progress.detail
+              } : null}
+              nextPaydayIso={nextPaydayIso}
+            />
+            <JarOverview
+              jars={jars}
+              availableCents={snapshot.availableCents}
+              currency={household.currency}
+              investingEnabled={snapshot.profile.investingEnabled}
+            />
+            <AllocationBoard
+              sectionId="allocation-board"
+              childId={snapshot.profile.id}
+              availableCents={snapshot.availableCents}
+              currency={household.currency}
+              mode={snapshot.profile.mode}
+              streak={streak}
+              sortedThisWeek={sortedThisWeek}
+              activeQuests={activeQuests}
+              currentBalances={snapshot.jarBalances}
+              totalAllocatedCents={snapshot.lifetimeAllocatedCents}
+              currentBadges={badges}
+              jars={jars}
+              targets={snapshot.profile.jarTargets}
+            />
+            <SortingStreak streak={streak} mode={snapshot.profile.mode} />
+          </>
+        ) : (
+          <>
+            <section className="stats-grid">
+              <StatCard label={tone.leftoverLabel} value={formatCurrency(snapshot.availableCents, household.currency)} tone="sun" />
+              <StatCard label="This month" value={formatCurrency(snapshot.monthlyInflowCents, household.currency)} tone="mint" />
+              <StatCard label="All-time sorted" value={formatCurrency(snapshot.lifetimeAllocatedCents, household.currency)} tone="coral" />
+            </section>
+            <ChildMissionStrip
+              mode={snapshot.profile.mode}
+              availableCents={snapshot.availableCents}
+              currency={household.currency}
+              nearestBadge={nearestBadge ? {
+                badge: nearestBadge.badge,
+                percent: nearestBadge.progress.percent,
+                detail: nearestBadge.progress.detail
+              } : null}
+              nextPaydayIso={nextPaydayIso}
+            />
+            <ClosestBadgeCallout
+              badges={badges}
+              currency={household.currency}
+              spend={snapshot.jarBalances.spend}
+              save={snapshot.jarBalances.save}
+              give={snapshot.jarBalances.give}
+              grow={snapshot.jarBalances.grow}
+              lifetimeAllocatedCents={snapshot.lifetimeAllocatedCents}
+              streak={streak}
+            />
+            <JarOverview
+              jars={jars}
+              availableCents={snapshot.availableCents}
+              currency={household.currency}
+              investingEnabled={snapshot.profile.investingEnabled}
+            />
+            <FirstMission mode={snapshot.profile.mode} hasStarted={snapshot.lifetimeAllocatedCents > 0} />
+            <GoalStoryCard
+              mode={snapshot.profile.mode}
+              goalName={snapshot.profile.goalName}
+              goalAmountCents={snapshot.profile.goalAmountCents}
+              currentCents={goalBalance}
+              currency={household.currency}
+            />
+            <AllocationBoard
+              sectionId="allocation-board"
+              childId={snapshot.profile.id}
+              availableCents={snapshot.availableCents}
+              currency={household.currency}
+              mode={snapshot.profile.mode}
+              streak={streak}
+              sortedThisWeek={sortedThisWeek}
+              activeQuests={activeQuests}
+              currentBalances={snapshot.jarBalances}
+              totalAllocatedCents={snapshot.lifetimeAllocatedCents}
+              currentBadges={badges}
+              jars={jars}
+              targets={snapshot.profile.jarTargets}
+            />
+            <JarAdventure
+              currency={household.currency}
+              mode={snapshot.profile.mode}
+              totalAllocatedCents={snapshot.lifetimeAllocatedCents}
+              targets={snapshot.profile.jarTargets}
+              balances={snapshot.jarBalances}
+              investingEnabled={snapshot.profile.investingEnabled}
+              badges={badges}
+              streak={streak}
+            />
+            <QuestTracker
+              quests={activeQuests}
+              saveBalanceCents={snapshot.jarBalances.save}
+              giveBalanceCents={snapshot.jarBalances.give}
+              streak={streak}
+              currency={household.currency}
+            />
+            <SortingStreak streak={streak} mode={snapshot.profile.mode} />
+            <HistoryChart
+              history={snapshot.history}
+              currency={household.currency}
+              mode={snapshot.profile.mode}
+              allowanceCents={snapshot.profile.allowanceCents}
+              nextPaydayIso={nextPaydayIso}
+              nextThreePaydays={upcomingPaydays}
+              schedule={snapshot.profile.schedule}
+            />
+            <RecentActivity entries={entries} currency={household.currency} mode={snapshot.profile.mode} />
+          </>
+        )}
       </ChildShell>
     </main>
   );

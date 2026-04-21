@@ -79,6 +79,7 @@ export function AllocationBoard({
   const [draft, setDraft] = useState(zeroDraft);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [celebrating, setCelebrating] = useState(false);
+  const [magicSorting, setMagicSorting] = useState(false);
   const [bouncingJar, setBouncingJar] = useState<JarKey | null>(null);
   const [rewardSummary, setRewardSummary] = useState<RewardSummary | null>(null);
 
@@ -107,9 +108,7 @@ export function AllocationBoard({
     [draftTotal, availableCents]
   );
 
-  function applySuggestedSplit() {
-    if (availableCents <= 0) return;
-
+  function buildSuggestedSplit() {
     const next: Record<JarKey, number> = { ...zeroDraft };
     let assigned = 0;
 
@@ -124,7 +123,23 @@ export function AllocationBoard({
       next[jar.key] = amount;
     });
 
+    return next;
+  }
+
+  function applySuggestedSplit() {
+    if (availableCents <= 0) return;
+    const next = buildSuggestedSplit();
     setDraft(next);
+  }
+
+  function buildAllocationFormData(allocations: Record<JarKey, number>) {
+    const formData = new FormData();
+    formData.set("childId", childId);
+    formData.set("spend", (allocations.spend / 100).toFixed(2));
+    formData.set("save", (allocations.save / 100).toFixed(2));
+    formData.set("give", (allocations.give / 100).toFixed(2));
+    formData.set("grow", (allocations.grow / 100).toFixed(2));
+    return formData;
   }
 
   function humanizeError(message: string) {
@@ -141,17 +156,21 @@ export function AllocationBoard({
     return mode === "little" ? "Hmm, let us try that again." : "Something did not save. Please try again.";
   }
 
-  async function handleSubmit(formData: FormData) {
+  async function processSubmission(allocations: Record<JarKey, number>) {
     setFeedback(null);
     setRewardSummary(null);
 
-    const sortedCents = draftTotal;
+    const sortedCents = allocations.spend + allocations.save + allocations.give + allocations.grow;
+    if (sortedCents <= 0) {
+      setFeedback(mode === "little" ? "Tap + or use Magic Sort to move some coins." : "Add at least one amount before sorting.");
+      return;
+    }
     const streakAfter = sortedThisWeek ? streak : streak + 1;
     const projectedBalances = {
-      spend: (currentBalances.spend ?? 0) + (draft.spend ?? 0),
-      save: (currentBalances.save ?? 0) + (draft.save ?? 0),
-      give: (currentBalances.give ?? 0) + (draft.give ?? 0),
-      grow: (currentBalances.grow ?? 0) + (draft.grow ?? 0)
+      spend: (currentBalances.spend ?? 0) + allocations.spend,
+      save: (currentBalances.save ?? 0) + allocations.save,
+      give: (currentBalances.give ?? 0) + allocations.give,
+      grow: (currentBalances.grow ?? 0) + allocations.grow
     };
 
     const closestBefore = getClosestBadge(currentBadges, currency, {
@@ -213,7 +232,7 @@ export function AllocationBoard({
         return `${quest.title}: +${delta}% progress`;
       });
 
-    const result = await allocateFundsAction(formData);
+    const result = await allocateFundsAction(buildAllocationFormData(allocations));
     if ("error" in result) {
       setFeedback(humanizeError(result.error));
       return;
@@ -232,6 +251,21 @@ export function AllocationBoard({
     setTimeout(() => setCelebrating(false), 1400);
   }
 
+  async function handleSubmit(_formData: FormData) {
+    await processSubmission({ ...draft });
+  }
+
+  async function handleMagicSort() {
+    if (availableCents <= 0 || magicSorting) {
+      return;
+    }
+    setMagicSorting(true);
+    const next = buildSuggestedSplit();
+    setDraft(next);
+    await processSubmission(next);
+    setMagicSorting(false);
+  }
+
   return (
     <section className="panel panel--warm" id={sectionId}>
       {celebrating ? (
@@ -239,6 +273,9 @@ export function AllocationBoard({
           <span /><span /><span /><span />
           <span /><span /><span /><span />
         </div>
+      ) : null}
+      {celebrating && mode === "little" ? (
+        <div className="celebration-ribbon" aria-live="polite">🎉 Jar Power Unlocked! 🎉</div>
       ) : null}
 
       <div className="section-heading">
@@ -253,9 +290,16 @@ export function AllocationBoard({
         <p className="empty-state">{mode === "little" ? "All sorted! Come back when you get more coins." : "Nothing to sort right now. Check back after your next allowance."}</p>
       ) : (
       <>
-      <button className="secondary-button" onClick={applySuggestedSplit} type="button">
-        {tone.autoFill}
-      </button>
+      <div className="allocation-actions-row">
+        <button className="secondary-button" onClick={applySuggestedSplit} type="button">
+          {tone.autoFill}
+        </button>
+        {mode === "little" ? (
+          <button className="primary-button magic-sort-button" onClick={handleMagicSort} type="button" disabled={magicSorting}>
+            {magicSorting ? "Magic sorting..." : "✨ Magic Sort"}
+          </button>
+        ) : null}
+      </div>
 
       <form action={handleSubmit} className="allocation-form">
         <input name="childId" type="hidden" value={childId} />
