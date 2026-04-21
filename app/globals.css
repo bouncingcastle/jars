@@ -531,6 +531,53 @@ button {
   font-weight: 700;
 }
 
+.reward-summary {
+  margin-top: 0.5rem;
+  border: 1px solid rgba(0, 121, 107, 0.2);
+  border-radius: 16px;
+  padding: 0.8rem 0.9rem;
+  display: grid;
+  gap: 0.45rem;
+  background: linear-gradient(135deg, rgba(126, 200, 165, 0.2), rgba(255, 255, 255, 0.86));
+}
+
+.reward-summary header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.reward-summary header strong {
+  font-family: var(--font-display), serif;
+  color: var(--ink);
+  font-size: 1.05rem;
+}
+
+.reward-summary header span {
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  background: rgba(0, 121, 107, 0.12);
+  color: var(--teal);
+  font-weight: 800;
+  font-size: 0.8rem;
+}
+
+.reward-summary p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.9rem;
+}
+
+.reward-summary ul {
+  margin: 0;
+  padding-left: 1rem;
+  color: var(--muted);
+  font-size: 0.86rem;
+  display: grid;
+  gap: 0.2rem;
+}
+
 .jar-grid {
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
 }
@@ -1064,6 +1111,15 @@ button {
   .badge-callout__head {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .mission-strip__meta {
+    grid-template-columns: 1fr;
+  }
+
+  .reward-summary header {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .admin-child-summary-card__header,
@@ -1691,6 +1747,56 @@ button {
   margin: 0;
   color: var(--muted);
   font-size: 0.84rem;
+}
+
+.mission-strip {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1rem;
+  border: 1px solid rgba(0, 121, 107, 0.2);
+  background: linear-gradient(135deg, rgba(126, 200, 165, 0.18), rgba(255, 255, 255, 0.88));
+}
+
+.mission-strip__lead h2 {
+  margin: 0.2rem 0;
+  font-size: clamp(1.25rem, 2.6vw, 1.6rem);
+}
+
+.mission-strip__lead p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.mission-strip__meta {
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.mission-strip__meta article {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 0.65rem 0.75rem;
+  background: rgba(255, 255, 255, 0.65);
+  display: grid;
+  gap: 0.2rem;
+}
+
+.mission-strip__meta small {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.mission-strip__meta strong {
+  color: var(--ink);
+  font-size: 0.92rem;
+  line-height: 1.35;
+}
+
+.mission-strip__actions {
+  display: flex;
+  justify-content: flex-start;
 }
 
 .admin-overview-banner p {

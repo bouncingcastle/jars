@@ -4,16 +4,25 @@ import { useCallback, useMemo, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { allocateFundsAction } from "@/app/actions";
 import { getKidTone } from "@/lib/kid-copy";
+import { Badge, computeBadges, getClosestBadge } from "@/lib/badges";
 import { formatCurrency } from "@/lib/money";
+import { computeQuestProgress } from "@/lib/quests";
 import { playCoinClink, playSuccessChime, playBadgeUnlock } from "@/lib/sounds";
 import { JarVisual } from "@/components/jar-visual";
-import { ChildMode, JarKey } from "@/lib/types";
+import { ChildMode, JarKey, Quest } from "@/lib/types";
 
 interface AllocationBoardProps {
+  sectionId?: string;
   childId: string;
   availableCents: number;
   currency: string;
   mode: ChildMode;
+  streak: number;
+  sortedThisWeek: boolean;
+  activeQuests: Quest[];
+  currentBalances: Partial<Record<JarKey, number>>;
+  totalAllocatedCents: number;
+  currentBadges: Badge[];
   targets: Partial<Record<JarKey, number>>;
   jars: Array<{
     key: JarKey;
@@ -44,12 +53,34 @@ function SubmitButton({ label }: { label: string }) {
   );
 }
 
-export function AllocationBoard({ childId, availableCents, currency, mode, jars, targets }: AllocationBoardProps) {
+interface RewardSummary {
+  sortedCents: number;
+  streakDelta: number;
+  badgeSummary: string;
+  questSummaries: string[];
+}
+
+export function AllocationBoard({
+  sectionId,
+  childId,
+  availableCents,
+  currency,
+  mode,
+  streak,
+  sortedThisWeek,
+  activeQuests,
+  currentBalances,
+  totalAllocatedCents,
+  currentBadges,
+  jars,
+  targets
+}: AllocationBoardProps) {
   const tone = getKidTone(mode);
   const [draft, setDraft] = useState(zeroDraft);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [celebrating, setCelebrating] = useState(false);
   const [bouncingJar, setBouncingJar] = useState<JarKey | null>(null);
+  const [rewardSummary, setRewardSummary] = useState<RewardSummary | null>(null);
 
   const step = getStep(mode);
 
@@ -112,6 +143,76 @@ export function AllocationBoard({ childId, availableCents, currency, mode, jars,
 
   async function handleSubmit(formData: FormData) {
     setFeedback(null);
+    setRewardSummary(null);
+
+    const sortedCents = draftTotal;
+    const streakAfter = sortedThisWeek ? streak : streak + 1;
+    const projectedBalances = {
+      spend: (currentBalances.spend ?? 0) + (draft.spend ?? 0),
+      save: (currentBalances.save ?? 0) + (draft.save ?? 0),
+      give: (currentBalances.give ?? 0) + (draft.give ?? 0),
+      grow: (currentBalances.grow ?? 0) + (draft.grow ?? 0)
+    };
+
+    const closestBefore = getClosestBadge(currentBadges, currency, {
+      spend: currentBalances.spend ?? 0,
+      save: currentBalances.save ?? 0,
+      give: currentBalances.give ?? 0,
+      grow: currentBalances.grow ?? 0,
+      total: (currentBalances.spend ?? 0) + (currentBalances.save ?? 0) + (currentBalances.give ?? 0) + (currentBalances.grow ?? 0),
+      lifetime: totalAllocatedCents,
+      streak
+    });
+
+    const projectedBadges = computeBadges(projectedBalances, totalAllocatedCents + sortedCents, streakAfter, mode);
+    const closestAfter = getClosestBadge(projectedBadges, currency, {
+      spend: projectedBalances.spend,
+      save: projectedBalances.save,
+      give: projectedBalances.give,
+      grow: projectedBalances.grow,
+      total: projectedBalances.spend + projectedBalances.save + projectedBalances.give + projectedBalances.grow,
+      lifetime: totalAllocatedCents + sortedCents,
+      streak: streakAfter
+    });
+
+    const badgeSummary = !closestAfter
+      ? "All badges unlocked. Amazing work."
+      : closestBefore && closestBefore.badge.id === closestAfter.badge.id
+        ? (() => {
+            const beforePercent = Math.round(closestBefore.progress.percent);
+            const afterPercent = Math.round(closestAfter.progress.percent);
+            if (afterPercent <= beforePercent) {
+              return `${closestAfter.badge.emoji} ${closestAfter.badge.label}: still ${afterPercent}%. Keep going.`;
+            }
+            return `${closestAfter.badge.emoji} ${closestAfter.badge.label}: ${beforePercent}% -> ${afterPercent}%`;
+          })()
+        : `New focus: ${closestAfter.badge.emoji} ${closestAfter.badge.label} at ${Math.round(closestAfter.progress.percent)}%`;
+
+    const questSummaries = activeQuests
+      .slice(0, 2)
+      .map((quest) => {
+        const before = computeQuestProgress(quest, {
+          save: currentBalances.save ?? 0,
+          give: currentBalances.give ?? 0,
+          streak,
+          currency
+        });
+        const after = computeQuestProgress(quest, {
+          save: projectedBalances.save,
+          give: projectedBalances.give,
+          streak: streakAfter,
+          currency
+        });
+        if (after.complete && !before.complete) {
+          return `${quest.title}: completed! Reward unlocked.`;
+        }
+        const delta = Math.max(0, Math.round(after.progressPercent - before.progressPercent));
+        if (delta === 0) {
+          return `${quest.title}: progress held. Keep sorting to move this quest.`;
+        }
+        return `${quest.title}: +${delta}% progress`;
+      });
+
     const result = await allocateFundsAction(formData);
     if ("error" in result) {
       setFeedback(humanizeError(result.error));
@@ -122,11 +223,17 @@ export function AllocationBoard({ childId, availableCents, currency, mode, jars,
     playSuccessChime();
     setTimeout(() => playBadgeUnlock(), 600);
     setFeedback(mode === "little" ? "Awesome sorting!" : "Great allocation. Nicely done.");
+    setRewardSummary({
+      sortedCents,
+      streakDelta: sortedThisWeek ? 0 : 1,
+      badgeSummary,
+      questSummaries
+    });
     setTimeout(() => setCelebrating(false), 1400);
   }
 
   return (
-    <section className="panel panel--warm">
+    <section className="panel panel--warm" id={sectionId}>
       {celebrating ? (
         <div className="coin-drop-burst" aria-hidden="true">
           <span /><span /><span /><span />
@@ -205,6 +312,28 @@ export function AllocationBoard({ childId, availableCents, currency, mode, jars,
           <SubmitButton label={tone.cta} />
         </div>
         {feedback ? <p className="kid-feedback">{feedback}</p> : null}
+        {rewardSummary ? (
+          <article className="reward-summary" aria-live="polite">
+            <header>
+              <strong>{mode === "little" ? "Level up summary" : "Sorting summary"}</strong>
+              <span>+{formatCurrency(rewardSummary.sortedCents, currency)} sorted</span>
+            </header>
+            <p>
+              {rewardSummary.streakDelta > 0
+                ? `Streak boosted: +${rewardSummary.streakDelta} ${rewardSummary.streakDelta === 1 ? "week" : "weeks"}`
+                : "Streak held strong this week"}
+            </p>
+            <p>{rewardSummary.badgeSummary}</p>
+            <ul>
+              {(rewardSummary.questSummaries.length > 0
+                ? rewardSummary.questSummaries
+                : [mode === "little" ? "No quests yet. Ask your parent to add one!" : "No active quests yet. Ask your parent to set one."]
+              ).map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </article>
+        ) : null}
       </form>
       </>
       )}

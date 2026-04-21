@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
 import { childLockAction } from "@/app/actions";
 import { AllocationBoard } from "@/components/allocation-board";
+import { ChildMissionStrip } from "@/components/child-mission-strip";
 import { ChildShell } from "@/components/child-shell";
-import { ClosestBadgeCallout } from "@/components/closest-badge-callout";
 import { ChildUnlockForm } from "@/components/child-unlock-form";
 import { FirstMission } from "@/components/first-mission";
 import { GoalStoryCard } from "@/components/goal-story-card";
@@ -16,7 +16,7 @@ import { SortingStreak } from "@/components/sorting-streak";
 import { StatCard } from "@/components/stat-card";
 import Link from "next/link";
 import { getKidTone } from "@/lib/kid-copy";
-import { computeBadges, computeStreak } from "@/lib/badges";
+import { computeBadges, computeStreak, getClosestBadge } from "@/lib/badges";
 import { hasChildSession, hasParentSession } from "@/lib/auth";
 import { formatCurrency } from "@/lib/money";
 import { getChildPageData, getChildProfile, getJarList } from "@/lib/store";
@@ -75,6 +75,14 @@ function getUpcomingPaydays(anchor: string, schedule: ScheduleType, count: numbe
   }
 
   return result;
+}
+
+function weekOf(date: Date) {
+  const day = date.getDay();
+  const monday = new Date(date);
+  monday.setHours(0, 0, 0, 0);
+  monday.setDate(monday.getDate() - ((day + 6) % 7));
+  return Math.floor(monday.getTime() / (7 * 86400000));
 }
 
 export default async function ChildDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -139,6 +147,17 @@ export default async function ChildDetailPage({ params }: { params: Promise<{ id
   }));
   const upcomingPaydays = getUpcomingPaydays(snapshot.profile.scheduleAnchor, snapshot.profile.schedule, 3);
   const nextPaydayIso = upcomingPaydays[0] ?? null;
+  const currentWeek = weekOf(new Date());
+  const sortedThisWeek = entries.some((entry) => entry.type === "allocation" && weekOf(new Date(entry.createdAt)) === currentWeek);
+  const nearestBadge = getClosestBadge(badges, household.currency, {
+    spend: snapshot.jarBalances.spend,
+    save: snapshot.jarBalances.save,
+    give: snapshot.jarBalances.give,
+    grow: snapshot.jarBalances.grow,
+    total: snapshot.jarBalances.spend + snapshot.jarBalances.save + snapshot.jarBalances.give + snapshot.jarBalances.grow,
+    lifetime: snapshot.lifetimeAllocatedCents,
+    streak
+  });
 
   return (
     <main className={`kid-page kid-mode-${snapshot.profile.mode}`} data-theme={snapshot.profile.theme ?? "default"}>
@@ -156,15 +175,16 @@ export default async function ChildDetailPage({ params }: { params: Promise<{ id
           <StatCard label="This month" value={formatCurrency(snapshot.monthlyInflowCents, household.currency)} tone="mint" />
           <StatCard label="All-time sorted" value={formatCurrency(snapshot.lifetimeAllocatedCents, household.currency)} tone="coral" />
         </section>
-        <ClosestBadgeCallout
-          badges={badges}
+        <ChildMissionStrip
+          mode={snapshot.profile.mode}
+          availableCents={snapshot.availableCents}
           currency={household.currency}
-          spend={snapshot.jarBalances.spend}
-          save={snapshot.jarBalances.save}
-          give={snapshot.jarBalances.give}
-          grow={snapshot.jarBalances.grow}
-          lifetimeAllocatedCents={snapshot.lifetimeAllocatedCents}
-          streak={streak}
+          nearestBadge={nearestBadge ? {
+            badge: nearestBadge.badge,
+            percent: nearestBadge.progress.percent,
+            detail: nearestBadge.progress.detail
+          } : null}
+          nextPaydayIso={nextPaydayIso}
         />
         <JarOverview
           jars={jars}
@@ -181,10 +201,17 @@ export default async function ChildDetailPage({ params }: { params: Promise<{ id
           currency={household.currency}
         />
         <AllocationBoard
+          sectionId="allocation-board"
           childId={snapshot.profile.id}
           availableCents={snapshot.availableCents}
           currency={household.currency}
           mode={snapshot.profile.mode}
+          streak={streak}
+          sortedThisWeek={sortedThisWeek}
+          activeQuests={activeQuests}
+          currentBalances={snapshot.jarBalances}
+          totalAllocatedCents={snapshot.lifetimeAllocatedCents}
+          currentBadges={badges}
           jars={jars}
           targets={snapshot.profile.jarTargets}
         />
