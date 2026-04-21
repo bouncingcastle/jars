@@ -104,6 +104,7 @@ export function AllocationBoard({
   const touchDragCoinRef = useRef<number | null>(null);
   const [touchDragCoin, setTouchDragCoin] = useState<number | null>(null);
   const [touchGhostPos, setTouchGhostPos] = useState<{ x: number; y: number } | null>(null);
+  const [dropSubmitting, setDropSubmitting] = useState(false);
 
   const step = getStep(mode);
 
@@ -172,7 +173,18 @@ export function AllocationBoard({
     const startX = Number.isFinite(event.clientX) ? event.clientX : jarRect.left + jarRect.width * 0.5;
     const startY = Number.isFinite(event.clientY) ? event.clientY : jarRect.top + jarRect.height * 0.5;
     triggerCoinAnimation(coinValue, startX, startY, jar, jarRect);
-    nudge(jar, coinValue);
+    if (mode === "little") {
+      void handleDropSubmit(jar, coinValue);
+    } else {
+      nudge(jar, coinValue);
+    }
+  }
+
+  async function handleDropSubmit(jar: JarKey, coinValue: number) {
+    if (dropSubmitting) return;
+    setDropSubmitting(true);
+    await processSubmission({ ...zeroDraft, [jar]: coinValue });
+    setDropSubmitting(false);
   }
 
   function handleCoinTouchStart(e: React.TouchEvent<HTMLButtonElement>, coinValue: number) {
@@ -367,7 +379,7 @@ export function AllocationBoard({
       const jarKey = jarEl.dataset.jarKey as JarKey;
       const jarRect = jarEl.getBoundingClientRect();
       triggerCoinAnimation(coinValue, touch.clientX, touch.clientY, jarKey, jarRect);
-      nudgeRef.current(jarKey, coinValue);
+      void handleDropSubmit(jarKey, coinValue);
     }
 
     document.addEventListener("touchmove", onTouchMove, { passive: false });
@@ -464,7 +476,8 @@ export function AllocationBoard({
               <button
                 key={coin}
                 className="coin-token"
-                draggable
+                draggable={!dropSubmitting}
+                disabled={dropSubmitting}
                 onDragStart={(event) => handleCoinDragStart(event, coin)}
                 onTouchStart={(event) => handleCoinTouchStart(event, coin)}
                 onClick={() => setFeedback("Drag a coin onto a jar, or tap Magic Sort.")}
